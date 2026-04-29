@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: stacksensei-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: ENABLE_LOCAL_MODEL
+        value: "false"
+      - key: CORS_ORIGINS
+        sync: false
+      - key: DEEPSEEK_API_KEY
+        sync: false
+

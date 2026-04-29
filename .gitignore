@@ -1,0 +1,58 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+
+# Node/static build outputs
+node_modules/
+dist/
+build/
+.vercel/
+.netlify/
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Logs and temporary files
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+*.bak
+
+# Model weights and local model dumps
+*.safetensors
+*.bin
+*.pt
+*.pth
+merged_model_re/
+models/**/model*
+
+# Large datasets
+PokerDataSet/
+data/*.json
+data/*.jsonl
+data/*.csv
+data/*.parquet
+data/raw/
+data/processed/
+
+# Original local package artifacts
+*.zip
+

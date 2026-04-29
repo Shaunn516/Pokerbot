@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StackSensei - Poker Learning Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-shell">
+        <header class="hero">
+            <div class="hero-copy">
+                <p class="eyebrow">Texas Hold'em Mentor</p>
+                <h1>StackSensei</h1>
+                <p id="subtitle">Action-first poker coaching for learners.</p>
+            </div>
+            <button id="lang-toggle-btn" class="icon-button" type="button" title="Switch language">中文</button>
+        </header>
+
+        <main class="workspace">
+            <section class="game-panel" aria-labelledby="game-title">
+                <h2 id="game-title">Current Game Info</h2>
+                <div class="panel-content">
+                    <label class="input-group" for="hand-cards">
+                        <span>Hand Cards</span>
+                        <input type="text" id="hand-cards" placeholder="e.g. Ah Ks" maxlength="32">
+                    </label>
+
+                    <label class="input-group" for="community-cards">
+                        <span>Community Cards</span>
+                        <input type="text" id="community-cards" placeholder="e.g. Qh Jd 7c" maxlength="80">
+                    </label>
+
+                    <label class="input-group" for="chips">
+                        <span>Chips</span>
+                        <input type="number" id="chips" placeholder="100" min="1" value="100">
+                    </label>
+
+                    <label class="input-group" for="pot">
+                        <span>Pot</span>
+                        <input type="number" id="pot" placeholder="0" min="0" value="0">
+                    </label>
+
+                    <label class="input-group" for="position">
+                        <span>Position</span>
+                        <select id="position">
+                            <option value="unknown">Unknown</option>
+                            <option value="UTG">UTG</option>
+                            <option value="HJ">HJ</option>
+                            <option value="CO">CO</option>
+                            <option value="BTN">BTN</option>
+                            <option value="SB">SB</option>
+                            <option value="BB">BB</option>
+                        </select>
+                    </label>
+
+                    <label class="input-group" for="players">
+                        <span>Players</span>
+                        <input type="number" id="players" min="2" max="9" value="6">
+                    </label>
+
+                    <button id="update-game-btn" class="btn-primary" type="button">Update Game Info</button>
+                </div>
+            </section>
+
+            <section class="chat-container" aria-label="Poker chat">
+                <div class="chat-messages" id="chat-messages">
+                    <article class="message bot-message">
+                        <img src="assets/joker-avatar.png" alt="StackSensei avatar" class="bot-avatar">
+                        <div class="message-content" id="welcome-message">
+                            <p>Hello, I am StackSensei. Share your spot and I will give a practical poker learning recommendation.</p>
+                        </div>
+                    </article>
+                </div>
+
+                <div class="quick-questions" id="quick-questions">
+                    <button type="button" class="quick-question-btn">What should I do next?</button>
+                    <button type="button" class="quick-question-btn">Should I call?</button>
+                    <button type="button" class="quick-question-btn">Should I raise?</button>
+                    <button type="button" class="quick-question-btn">Should I fold?</button>
+                    <button type="button" class="quick-question-btn">What are the pot odds?</button>
+                    <button type="button" class="quick-question-btn">Analyze this hand</button>
+                </div>
+
+                <div class="input-controls">
+                    <button id="voice-btn" class="tool-button" type="button" title="Voice input">Mic</button>
+                    <button id="read-aloud-btn" class="tool-button" type="button" title="Read last response">Read</button>
+                    <div id="voice-status" class="voice-status" aria-live="polite"></div>
+                </div>
+
+                <form class="input-wrapper" id="chat-form">
+                    <input type="text" id="user-input" placeholder="Ask a poker question..." autocomplete="off">
+                    <button id="send-btn" class="send-btn" type="submit">Send</button>
+                </form>
+            </section>
+        </main>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
+
