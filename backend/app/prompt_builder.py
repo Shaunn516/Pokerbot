@@ -24,102 +24,86 @@ def _has_cards(text: str) -> bool:
     return bool(CARD_RE.search(text) or CHINESE_CARD_RE.search(text))
 
 
-def _has_specific_game_context(request: ChatRequest) -> bool:
-    state = request.gameState
-    combined = f"{request.message} {state.handCards} {state.communityCards}"
-    return bool(state.handCards.strip() or _has_cards(combined))
+def _has_required_hand_context(message: str, game_state: GameState) -> bool:
+    has_hole_cards = bool(game_state.handCards.strip() or _has_cards(message))
+    has_position = game_state.position != "unknown" or "position" in message.lower() or "位置" in message
+    has_pot_or_action = game_state.pot > 0 or bool(game_state.actionHistory.strip())
+    return has_hole_cards and has_position and has_pot_or_action
 
 
-def detect_intent(request: ChatRequest) -> Intent:
-    """Lightweight intent routing for prompt behavior without a second model call."""
+def detect_user_intent(message: str, game_state: GameState) -> Intent:
+    """Classify the current user message; game state is context, not intent."""
 
-    message = request.message.strip()
+    message = message.strip()
     lowered = message.lower()
 
-    casual_markers = [
-        "hello",
-        "hi",
-        "hey",
-        "can you chat",
-        "chat with me",
-        "who are you",
-        "你好",
-        "您好",
-        "你可以聊天吗",
-        "能聊天吗",
-        "你是谁",
-    ]
     capability_markers = [
         "what can you do",
         "what do you do",
+        "who are you",
         "help me with",
         "你的功能",
         "你能做什么",
         "你会什么",
+        "你是谁",
         "可以帮我",
     ]
     concept_markers = [
-        "pot odds",
-        "outs",
-        "equity",
-        "range",
-        "position",
-        "3-bet",
-        "c-bet",
-        "bluff",
+        "what are pot odds",
+        "what is pot odds",
+        "what is position",
+        "what are outs",
+        "what is equity",
+        "what is range",
+        "what is 3-bet",
+        "what is c-bet",
+        "what is bluff",
+        "pot odds是什么",
         "底池赔率",
-        "胜率",
-        "范围",
-        "位置",
-        "诈唬",
-        "持续下注",
+        "什么是位置",
+        "什么是翻牌",
+        "什么是胜率",
+        "什么是范围",
+        "什么是诈唬",
+        "什么是持续下注",
         "什么是",
         "解释",
     ]
-    decision_markers = [
-        "should i",
-        "what should i do",
-        "call",
-        "raise",
-        "fold",
-        "bet",
-        "jam",
-        "all in",
-        "analyze this hand",
-        "我应该",
-        "该不该",
-        "跟注",
-        "加注",
-        "弃牌",
-        "下注",
-        "全下",
-        "分析这手牌",
-        "怎么打",
+    explicit_decision_patterns = [
+        r"\bshould i (?:call|bet|fold|raise|jam|shove|all[ -]?in)\b",
+        r"\bwhat should i do(?: here)?\b",
+        r"\banaly[sz]e this hand\b",
+        r"\breview this hand\b",
+        r"\bhow should i play this (?:spot|hand)\b",
+        r"\bcan you analy[sz]e this hand\b",
+        r"这手牌怎么打",
+        r"帮我分析这手牌",
+        r"分析这手牌",
+        r"这手牌应该怎么做",
+        r"我应该(?:跟注|下注|弃牌|加注|全下)吗",
+        r"该不该(?:跟注|下注|弃牌|加注|全下)",
+        r"该(?:call|fold|raise|bet|jam|all.?in)吗",
+        r"怎么打",
     ]
 
     if any(marker in lowered for marker in capability_markers):
         return "capability_question"
-    if any(marker in lowered for marker in casual_markers) and not any(marker in lowered for marker in decision_markers):
-        return "casual_chat"
-
-    asks_for_decision = any(marker in lowered for marker in decision_markers)
-    if asks_for_decision:
-        state = request.gameState
-        has_hole_cards = bool(state.handCards.strip() or _has_cards(message))
-        has_position = state.position != "unknown" or "position" in lowered or "位置" in message
-        has_pot_or_action = state.pot > 0 or bool(state.actionHistory.strip()) or any(
-            marker in lowered for marker in ["pot", "bet", "raise", "call", "底池", "下注", "加注", "跟注"]
-        )
-        if has_hole_cards and has_position and has_pot_or_action:
-            return "hand_analysis"
-        return "incomplete_hand_request"
-
-    if any(marker in lowered for marker in concept_markers) and not _has_specific_game_context(request):
+    if any(marker in lowered for marker in concept_markers):
         return "poker_concept_question"
 
-    if _has_specific_game_context(request):
+    asks_for_decision = any(re.search(pattern, lowered, re.IGNORECASE) for pattern in explicit_decision_patterns)
+    if asks_for_decision and _has_required_hand_context(message, game_state):
         return "hand_analysis"
+    if asks_for_decision:
+        return "incomplete_hand_request"
+
     return "casual_chat"
+
+
+def detect_intent(request: ChatRequest) -> Intent:
+    """Backward-compatible wrapper for request-based intent detection."""
+
+    return detect_user_intent(request.message, request.gameState)
 
 
 def _format_game_state(game_state: GameState, language: str) -> str:
@@ -178,15 +162,6 @@ def build_messages(request: ChatRequest) -> list[dict[str, str]]:
         "Never guarantee profit or gambling success; frame poker guidance as educational."
     )
 
-    intent_prompt = (
-        "Response routing:\n"
-        "- casual_chat: reply naturally as StackSensei. Do not use Recommended Action/Reasoning/Risk Note labels.\n"
-        "- capability_question: explain that you can analyze poker hands, explain basic concepts, help beginners understand actions, and chat lightly. Do not use hand-analysis labels.\n"
-        "- poker_concept_question: explain the concept clearly like a coach with a short example. Do not use hand-analysis labels unless there is a specific hand decision.\n"
-        "- incomplete_hand_request: ask for the missing details before recommending a specific action. Ask for hole cards, position, pot size, current bet or action history as needed. Do not pretend to know the correct action and do not force a fold.\n"
-        "- hand_analysis: use the strict structured analysis format.\n"
-    )
-
     if intent == "hand_analysis" and (request.language == "zh" or user_is_chinese):
         format_prompt = (
             "For this hand_analysis request, strictly use these Chinese labels:\n\n"
@@ -203,19 +178,39 @@ def build_messages(request: ChatRequest) -> list[dict[str, str]]:
             "Risk Note:\n\n"
             "Give practical, beginner-friendly reasoning and make clear this is educational guidance, not guaranteed profit."
         )
+    elif intent == "incomplete_hand_request":
+        format_prompt = (
+            "The user is asking for a poker decision, but the available details are incomplete. "
+            "Ask for the missing details before recommending a specific action: hole cards, position, pot size, current bet, and action history as needed. "
+            "Do not invent details, do not force a fold, and do not use structured recommendation labels."
+        )
+    elif intent == "capability_question":
+        format_prompt = (
+            "Explain what StackSensei can do: analyze explicit hand-review requests, explain poker concepts, help beginners understand actions, and chat lightly. "
+            "Do not analyze the current hand unless the user explicitly asks, and do not use structured recommendation labels."
+        )
+    elif intent == "poker_concept_question":
+        format_prompt = (
+            "Explain the poker concept clearly like a coach with a short example. "
+            "Do not apply the current game state to a specific recommendation unless the user explicitly asks, and do not use structured recommendation labels."
+        )
     else:
         format_prompt = (
-            "This is not a full hand-analysis response. Do not use the strict hand-analysis labels. "
-            "Answer naturally, clearly, and briefly."
+            "Reply naturally to the user's current message. You may lightly reference poker, variance, or coaching if it fits. "
+            "Do not analyze the current hand unless the user explicitly asks, and do not use structured recommendation labels. "
+            "Keep the reply concise and conversational."
         )
 
-    system_prompt = "\n\n".join([shared_prompt, intent_prompt, format_prompt])
-    user_prompt = (
-        f"{intent_label}: {intent}\n\n"
-        f"{game_state_label}:\n"
-        f"{game_state}\n\n"
-        f"{user_prompt_label}: {request.message}"
-    )
+    system_prompt = "\n\n".join([shared_prompt, format_prompt])
+    if intent in {"hand_analysis", "incomplete_hand_request"}:
+        user_prompt = (
+            f"{intent_label}: {intent}\n\n"
+            f"{game_state_label}:\n"
+            f"{game_state}\n\n"
+            f"{user_prompt_label}: {request.message}"
+        )
+    else:
+        user_prompt = f"{intent_label}: {intent}\n\n{user_prompt_label}: {request.message}"
 
     return [
         {"role": "system", "content": system_prompt},
