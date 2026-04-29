@@ -2,16 +2,16 @@ const API_BASE_URL = (window.STACKSENSEI_API_BASE_URL || "http://localhost:8000"
 
 const RANKS = ["", "A", "K", "Q", "J", "10", "9", "8", "7", "6", "5", "4", "3", "2"];
 const SUITS = [
-    { value: "", en: "Suit", zh: "花色" },
-    { value: "s", en: "Spades ♠", zh: "黑桃 ♠" },
-    { value: "h", en: "Hearts ♥", zh: "红桃 ♥" },
-    { value: "d", en: "Diamonds ♦", zh: "方块 ♦" },
-    { value: "c", en: "Clubs ♣", zh: "梅花 ♣" }
+    { value: "", en: "--", zh: "--", symbol: "" },
+    { value: "s", en: "♠", zh: "♠", symbol: "♠" },
+    { value: "h", en: "♥", zh: "♥", symbol: "♥" },
+    { value: "d", en: "♦", zh: "♦", symbol: "♦" },
+    { value: "c", en: "♣", zh: "♣", symbol: "♣" }
 ];
 
 const CARD_SLOTS = [
-    { id: "hole-1", group: "hole", en: "Card 1", zh: "第1张" },
-    { id: "hole-2", group: "hole", en: "Card 2", zh: "第2张" },
+    { id: "hole-1", group: "hole", en: "Card 1", zh: "手牌1" },
+    { id: "hole-2", group: "hole", en: "Card 2", zh: "手牌2" },
     { id: "flop-1", group: "board", en: "Flop 1", zh: "翻牌1" },
     { id: "flop-2", group: "board", en: "Flop 2", zh: "翻牌2" },
     { id: "flop-3", group: "board", en: "Flop 3", zh: "翻牌3" },
@@ -19,42 +19,47 @@ const CARD_SLOTS = [
     { id: "river", group: "board", en: "River", zh: "河牌" }
 ];
 
+const POSITIONS = ["UTG", "HJ", "CO", "BTN", "SB", "BB"];
+
 const I18N = {
     en: {
         htmlLang: "en",
         toggle: "中文",
-        subtitle: "A witty card master for poker coaching, concepts, and table talk.",
-        gameTitle: "Current Game Info",
-        notationHelper: "New to poker notation? Use the dropdowns. StackSensei will convert your cards automatically.",
-        handCards: "Hand Cards",
-        communityCards: "Community Cards",
-        manualHand: "Manual hand cards",
-        manualCommunity: "Manual community cards",
-        advanced: "Advanced manual input",
-        chips: "Chips",
+        kicker: "Texas Hold'em Mentor",
+        subtitleEn: "A card-table coach that chats, teaches, and reviews your hands.",
+        subtitleZh: "会聊天、会讲牌，也会拆解牌局的牌桌教练。",
+        tableTitle: "Table View",
+        gameTitle: "Game Setup",
+        heroCards: "Hero Cards",
+        boardCards: "Board Cards",
+        tableContext: "Table Context",
+        stack: "Stack",
         pot: "Pot",
         position: "Position",
         players: "Players",
         actionHistory: "Action History",
-        actionPlaceholder: "Example: UTG folds, HJ raises to 2.5BB, BTN calls...",
-        rankPlaceholder: "Rank",
+        actionPlaceholder: "e.g. UTG folds, HJ raises to 2.5BB, BTN calls...",
+        rankPlaceholder: "--",
         duplicateWarning: "Duplicate card selected. Please choose unique cards.",
-        update: "Update Game Info",
-        welcome: "Hello, I am StackSensei. I can chat, explain poker ideas, or break down a hand when you bring me a spot.",
+        update: "Use This Hand",
+        chatTitle: "Coach Chat",
+        chatSubtitle: "Ask for a decision, a concept, or a full hand review.",
+        ready: "Ready",
+        updated: "Hand loaded",
+        welcome: "Hello, I am StackSensei. Share your spot and I will give a practical poker learning recommendation.",
         questions: [
-            "Can you chat?",
-            "What can you do?",
-            "What are pot odds?",
-            "Should I call with As Kh on BTN?",
-            "Analyze this hand",
-            "Explain position"
+            "What should I do next?",
+            "Should I call?",
+            "Should I raise?",
+            "Should I fold?",
+            "What are the pot odds?",
+            "Analyze this hand"
         ],
         mic: "Mic",
         read: "Read",
-        input: "Ask StackSensei anything...",
+        input: "Ask a poker question...",
         send: "Send",
         thinking: "Thinking...",
-        updated: "Game info updated.",
         empty: "Please enter a question first.",
         listening: "Listening...",
         noSpeech: "Speech recognition is not supported in this browser.",
@@ -63,63 +68,66 @@ const I18N = {
         readNone: "There is no assistant response to read yet.",
         positions: {
             unknown: "Unknown",
-            UTG: "UTG = early position",
-            HJ: "HJ = middle/late position",
-            CO: "CO = middle/late position",
-            BTN: "BTN = dealer button",
-            SB: "SB = blinds",
-            BB: "BB = blinds"
+            UTG: "UTG",
+            HJ: "HJ",
+            CO: "CO",
+            BTN: "BTN",
+            SB: "SB",
+            BB: "BB"
         }
     },
     zh: {
         htmlLang: "zh-CN",
         toggle: "EN",
-        subtitle: "会聊天、会讲牌，也会拆解牌局的牌桌教练。",
-        gameTitle: "当前牌局信息",
-        notationHelper: "不熟悉扑克缩写？直接用下拉框选择点数和花色，StackSensei 会自动转换。",
-        handCards: "手牌",
-        communityCards: "公共牌",
-        manualHand: "手动输入手牌",
-        manualCommunity: "手动输入公共牌",
-        advanced: "高级手动输入",
-        chips: "筹码",
+        kicker: "德州扑克导师",
+        subtitleEn: "A card-table coach that chats, teaches, and reviews your hands.",
+        subtitleZh: "会聊天、会讲牌，也会拆解牌局的牌桌教练。",
+        tableTitle: "牌桌视图",
+        gameTitle: "牌局设置",
+        heroCards: "手牌",
+        boardCards: "公共牌",
+        tableContext: "牌桌信息",
+        stack: "筹码",
         pot: "底池",
         position: "位置",
         players: "玩家数",
         actionHistory: "行动历史",
         actionPlaceholder: "例如：UTG弃牌，HJ加注到2.5BB，BTN跟注……",
-        rankPlaceholder: "点数",
-        duplicateWarning: "选择了重复的牌，请改成不同的牌。",
-        update: "更新牌局信息",
-        welcome: "你好，我是 StackSensei。牌桌之外我也能聊两句，不过强项还是帮你拆解牌局和讲清扑克概念。",
+        rankPlaceholder: "--",
+        duplicateWarning: "选择了重复牌，请换成不同的牌。",
+        update: "使用这手牌",
+        chatTitle: "教练聊天",
+        chatSubtitle: "询问决策、概念，或完整复盘这手牌。",
+        ready: "就绪",
+        updated: "牌局已载入",
+        welcome: "你好，我是 StackSensei。告诉我当前牌局，我会给你实用的德州扑克学习建议。",
         questions: [
-            "你可以聊天吗？",
-            "你能做什么？",
-            "什么是底池赔率？",
-            "我在BTN拿As Kh应该跟注吗？",
-            "分析这手牌",
-            "解释一下位置"
+            "下一步怎么打？",
+            "我应该跟注吗？",
+            "我应该加注吗？",
+            "我应该弃牌吗？",
+            "底池赔率是多少？",
+            "分析这手牌"
         ],
         mic: "语音",
         read: "朗读",
-        input: "随便问 StackSensei...",
+        input: "问一个德州扑克问题……",
         send: "发送",
         thinking: "思考中...",
-        updated: "牌局信息已更新。",
-        empty: "请先输入一个问题。",
+        empty: "请先输入问题。",
         listening: "正在聆听...",
-        noSpeech: "当前浏览器不支持语音识别。",
+        noSpeech: "这个浏览器不支持语音识别。",
         backendError: "后端服务可能正在唤醒或暂时不可用，请稍后再试。",
-        genericError: "抱歉，发生了一些问题。",
+        genericError: "抱歉，出错了。",
         readNone: "还没有可朗读的助手回复。",
         positions: {
             unknown: "未知",
-            UTG: "UTG = 前位",
-            HJ: "HJ = 中后位",
-            CO: "CO = 中后位",
-            BTN: "BTN = 庄位",
-            SB: "SB = 盲注位",
-            BB: "BB = 盲注位"
+            UTG: "UTG",
+            HJ: "HJ",
+            CO: "CO",
+            BTN: "BTN",
+            SB: "SB",
+            BB: "BB"
         }
     }
 };
@@ -140,14 +148,14 @@ class StackSenseiApp {
 
     bindElements() {
         this.langButton = document.getElementById("lang-toggle-btn");
-        this.subtitle = document.getElementById("subtitle");
+        this.kicker = document.getElementById("kicker");
+        this.subtitleEn = document.getElementById("subtitle-en");
+        this.subtitleZh = document.getElementById("subtitle-zh");
+        this.tableTitle = document.getElementById("table-title");
         this.gameTitle = document.getElementById("game-title");
-        this.notationHelper = document.getElementById("notation-helper");
         this.handCardsLabel = document.getElementById("hand-cards-label");
         this.communityCardsLabel = document.getElementById("community-cards-label");
-        this.manualHandLabel = document.getElementById("manual-hand-label");
-        this.manualCommunityLabel = document.getElementById("manual-community-label");
-        this.advancedSummary = document.getElementById("advanced-summary");
+        this.tableContextLabel = document.getElementById("table-context-label");
         this.chipsLabel = document.getElementById("chips-label");
         this.potLabel = document.getElementById("pot-label");
         this.positionLabel = document.getElementById("position-label");
@@ -155,12 +163,21 @@ class StackSenseiApp {
         this.actionHistoryLabel = document.getElementById("action-history-label");
         this.actionHistory = document.getElementById("action-history");
         this.position = document.getElementById("position");
+        this.players = document.getElementById("players");
+        this.chips = document.getElementById("chips");
+        this.pot = document.getElementById("pot");
         this.holeSelectorRoot = document.getElementById("hole-card-selectors");
         this.boardSelectorRoot = document.getElementById("community-card-selectors");
         this.cardWarning = document.getElementById("card-warning");
         this.handCards = document.getElementById("hand-cards");
         this.communityCards = document.getElementById("community-cards");
         this.updateButton = document.getElementById("update-game-btn");
+        this.tableCommunityCards = document.getElementById("table-community-cards");
+        this.handSummary = document.getElementById("hand-summary");
+        this.seats = Array.from(document.querySelectorAll(".seat"));
+        this.chatTitle = document.getElementById("chat-title");
+        this.chatSubtitle = document.getElementById("chat-subtitle");
+        this.statePill = document.getElementById("state-pill");
         this.messages = document.getElementById("chat-messages");
         this.welcome = document.getElementById("welcome-message");
         this.quickQuestions = Array.from(document.querySelectorAll(".quick-question-btn"));
@@ -174,7 +191,10 @@ class StackSenseiApp {
 
     bindEvents() {
         this.langButton.addEventListener("click", () => this.toggleLanguage());
-        this.updateButton.addEventListener("click", () => this.addMessage("bot", this.t("updated")));
+        this.updateButton.addEventListener("click", () => {
+            this.syncCardsFromSelectors();
+            this.statePill.textContent = this.t("updated");
+        });
         this.form.addEventListener("submit", (event) => {
             event.preventDefault();
             this.sendMessage();
@@ -189,8 +209,7 @@ class StackSenseiApp {
         this.readButton.addEventListener("click", () => this.readLastResponse());
         this.holeSelectorRoot.addEventListener("change", () => this.syncCardsFromSelectors());
         this.boardSelectorRoot.addEventListener("change", () => this.syncCardsFromSelectors());
-        this.handCards.addEventListener("input", () => this.validateDuplicateCards());
-        this.communityCards.addEventListener("input", () => this.validateDuplicateCards());
+        this.position.addEventListener("change", () => this.updateTableVisualizer());
     }
 
     renderCardSelectors() {
@@ -204,18 +223,22 @@ class StackSenseiApp {
             label.dataset.cardLabel = slot.id;
             wrapper.appendChild(label);
 
+            const row = document.createElement("div");
+            row.className = "card-picker-row";
+
             const rank = document.createElement("select");
             rank.className = "card-rank";
             rank.dataset.slot = slot.id;
             rank.setAttribute("aria-label", `${slot.en} rank`);
-            wrapper.appendChild(rank);
+            row.appendChild(rank);
 
             const suit = document.createElement("select");
             suit.className = "card-suit";
             suit.dataset.slot = slot.id;
             suit.setAttribute("aria-label", `${slot.en} suit`);
-            wrapper.appendChild(suit);
+            row.appendChild(suit);
 
+            wrapper.appendChild(row);
             const root = slot.group === "hole" ? this.holeSelectorRoot : this.boardSelectorRoot;
             root.appendChild(wrapper);
         });
@@ -235,21 +258,24 @@ class StackSenseiApp {
         const copy = I18N[this.language];
         document.documentElement.lang = copy.htmlLang;
         this.langButton.textContent = copy.toggle;
-        this.subtitle.textContent = copy.subtitle;
+        this.kicker.textContent = copy.kicker;
+        this.subtitleEn.textContent = copy.subtitleEn;
+        this.subtitleZh.textContent = copy.subtitleZh;
+        this.tableTitle.textContent = copy.tableTitle;
         this.gameTitle.textContent = copy.gameTitle;
-        this.notationHelper.textContent = copy.notationHelper;
-        this.handCardsLabel.textContent = copy.handCards;
-        this.communityCardsLabel.textContent = copy.communityCards;
-        this.manualHandLabel.textContent = copy.manualHand;
-        this.manualCommunityLabel.textContent = copy.manualCommunity;
-        this.advancedSummary.textContent = copy.advanced;
-        this.chipsLabel.textContent = copy.chips;
+        this.handCardsLabel.textContent = copy.heroCards;
+        this.communityCardsLabel.textContent = copy.boardCards;
+        this.tableContextLabel.textContent = copy.tableContext;
+        this.chipsLabel.textContent = copy.stack;
         this.potLabel.textContent = copy.pot;
         this.positionLabel.textContent = copy.position;
         this.playersLabel.textContent = copy.players;
         this.actionHistoryLabel.textContent = copy.actionHistory;
         this.actionHistory.placeholder = copy.actionPlaceholder;
         this.updateButton.textContent = copy.update;
+        this.chatTitle.textContent = copy.chatTitle;
+        this.chatSubtitle.textContent = copy.chatSubtitle;
+        this.statePill.textContent = copy.ready;
         this.welcome.innerHTML = `<p>${copy.welcome}</p>`;
         this.quickQuestions.forEach((button, index) => {
             button.textContent = copy.questions[index];
@@ -261,6 +287,7 @@ class StackSenseiApp {
         this.updatePositionOptions();
         this.updateCardSelectorCopy();
         this.validateDuplicateCards();
+        this.updateTableVisualizer();
         if (this.recognition) {
             this.recognition.lang = this.language === "zh" ? "zh-CN" : "en-US";
         }
@@ -329,6 +356,7 @@ class StackSenseiApp {
         this.handCards.value = holeCards.join(" ");
         this.communityCards.value = boardCards.join(" ");
         this.validateDuplicateCards();
+        this.updateTableVisualizer();
     }
 
     validateDuplicateCards() {
@@ -342,14 +370,66 @@ class StackSenseiApp {
         return !hasDuplicate;
     }
 
+    updateTableVisualizer() {
+        const heroPosition = this.position.value;
+        const heroCards = this.handCards.value.split(/\s+/).filter(Boolean);
+        const boardCards = this.communityCards.value.split(/\s+/).filter(Boolean);
+
+        this.handSummary.textContent = heroCards.length ? heroCards.map((card) => this.displayCard(card)).join(" ") : "-- / --";
+        this.tableCommunityCards.innerHTML = "";
+        for (let index = 0; index < 5; index += 1) {
+            this.tableCommunityCards.appendChild(this.createMiniCard(boardCards[index] || ""));
+        }
+
+        this.seats.forEach((seat) => {
+            const position = seat.dataset.position;
+            const cardsRoot = seat.querySelector(".seat-cards");
+            const isHero = position === heroPosition;
+            seat.classList.toggle("hero-seat", isHero);
+            cardsRoot.innerHTML = "";
+            if (isHero) {
+                cardsRoot.appendChild(this.createMiniCard(heroCards[0] || ""));
+                cardsRoot.appendChild(this.createMiniCard(heroCards[1] || ""));
+            } else {
+                cardsRoot.appendChild(this.createCardBack());
+                cardsRoot.appendChild(this.createCardBack());
+            }
+        });
+    }
+
+    createMiniCard(card) {
+        const el = document.createElement("span");
+        el.className = `mini-card${card ? "" : " empty"}${this.isRedCard(card) ? " red" : ""}`;
+        el.textContent = card ? this.displayCard(card) : "--";
+        return el;
+    }
+
+    createCardBack() {
+        const el = document.createElement("span");
+        el.className = "mini-card back";
+        el.textContent = "##";
+        return el;
+    }
+
+    displayCard(card) {
+        const rank = card.slice(0, -1).replace("T", "10");
+        const suit = SUITS.find((item) => item.value === card.slice(-1).toLowerCase())?.symbol || card.slice(-1);
+        return `${rank}${suit}`;
+    }
+
+    isRedCard(card) {
+        const suit = card.slice(-1).toLowerCase();
+        return suit === "h" || suit === "d";
+    }
+
     getGameState() {
-        const players = Number.parseInt(document.getElementById("players").value, 10) || 6;
+        const players = Number.parseInt(this.players.value, 10) || 6;
         return {
             handCards: this.handCards.value.trim(),
             communityCards: this.communityCards.value.trim(),
             actionHistory: this.actionHistory.value.trim(),
-            chips: Number.parseFloat(document.getElementById("chips").value) || 100,
-            pot: Number.parseFloat(document.getElementById("pot").value) || 0,
+            chips: Number.parseFloat(this.chips.value) || 100,
+            pot: Number.parseFloat(this.pot.value) || 0,
             position: this.position.value || "unknown",
             players,
             opponents: Math.max(1, players - 1)
@@ -363,6 +443,7 @@ class StackSenseiApp {
             return;
         }
 
+        this.syncCardsFromSelectors();
         this.input.value = "";
         this.addMessage("user", message);
         const loading = this.addMessage("bot", this.t("thinking"), true);
@@ -399,6 +480,7 @@ class StackSenseiApp {
     setBusy(isBusy) {
         this.sendButton.disabled = isBusy;
         this.input.disabled = isBusy;
+        this.statePill.textContent = isBusy ? this.t("thinking") : this.t("ready");
     }
 
     addMessage(sender, text, isLoading = false, action = "") {

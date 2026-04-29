@@ -3,101 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StackSensei - Poker Learning Assistant</title>
+    <title>StackSensei - Texas Hold'em Mentor</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="app-shell">
-        <header class="hero">
-            <div class="hero-copy">
-                <p class="eyebrow">Texas Hold'em Mentor</p>
+        <header class="brand-header">
+            <div class="brand-mark" aria-hidden="true">♠</div>
+            <div class="brand-copy">
+                <p class="eyebrow" id="kicker">Texas Hold'em Mentor</p>
                 <h1>StackSensei</h1>
-                <p id="subtitle">Action-first poker coaching for learners.</p>
+                <p class="subtitle" id="subtitle-en">A card-table coach that chats, teaches, and reviews your hands.</p>
+                <p class="subtitle zh-subtitle" id="subtitle-zh">会聊天、会讲牌，也会拆解牌局的牌桌教练。</p>
             </div>
             <button id="lang-toggle-btn" class="icon-button" type="button" title="Switch language">中文</button>
         </header>
 
         <main class="workspace">
-            <section class="game-panel" aria-labelledby="game-title">
-                <h2 id="game-title">Current Game Info</h2>
-                <div class="panel-content">
-                    <p class="helper-text" id="notation-helper">New to poker notation? Use the dropdowns. StackSensei will convert your cards automatically.</p>
-
-                    <div class="card-section">
-                        <div class="section-label" id="hand-cards-label">Hand Cards</div>
-                        <div class="card-grid compact" id="hole-card-selectors"></div>
+            <div class="left-dashboard">
+                <section class="table-panel" aria-labelledby="table-title">
+                    <div class="panel-heading">
+                        <h2 id="table-title">Table View</h2>
+                        <div class="hand-summary" id="hand-summary">-- / --</div>
                     </div>
-
-                    <div class="card-section">
-                        <div class="section-label" id="community-cards-label">Community Cards</div>
-                        <div class="card-grid" id="community-card-selectors"></div>
+                    <div class="poker-table" id="poker-table" aria-live="polite">
+                        <div class="community-row" id="table-community-cards"></div>
+                        <div class="seat seat-utg" data-position="UTG">
+                            <span class="seat-label">UTG</span>
+                            <div class="seat-cards"></div>
+                        </div>
+                        <div class="seat seat-hj" data-position="HJ">
+                            <span class="seat-label">HJ</span>
+                            <div class="seat-cards"></div>
+                        </div>
+                        <div class="seat seat-co" data-position="CO">
+                            <span class="seat-label">CO</span>
+                            <div class="seat-cards"></div>
+                        </div>
+                        <div class="seat seat-btn" data-position="BTN">
+                            <span class="seat-label">BTN</span>
+                            <div class="seat-cards"></div>
+                        </div>
+                        <div class="seat seat-sb" data-position="SB">
+                            <span class="seat-label">SB</span>
+                            <div class="seat-cards"></div>
+                        </div>
+                        <div class="seat seat-bb" data-position="BB">
+                            <span class="seat-label">BB</span>
+                            <div class="seat-cards"></div>
+                        </div>
                     </div>
+                </section>
 
-                    <div class="card-warning" id="card-warning" aria-live="polite"></div>
+                <section class="game-panel" aria-labelledby="game-title">
+                    <div class="panel-heading">
+                        <h2 id="game-title">Game Setup</h2>
+                    </div>
+                    <div class="panel-content">
+                        <div class="card-section">
+                            <div class="section-label" id="hand-cards-label">Hero Cards</div>
+                            <div class="card-grid hole-grid" id="hole-card-selectors"></div>
+                        </div>
 
-                    <details class="advanced-input">
-                        <summary id="advanced-summary">Advanced manual input</summary>
-                        <label class="input-group" for="hand-cards">
-                            <span id="manual-hand-label">Manual hand cards</span>
-                            <input type="text" id="hand-cards" placeholder="e.g. Ah Ks" maxlength="32">
-                        </label>
+                        <div class="card-section">
+                            <div class="section-label" id="community-cards-label">Board Cards</div>
+                            <div class="card-grid board-grid" id="community-card-selectors"></div>
+                        </div>
 
-                        <label class="input-group" for="community-cards">
-                            <span id="manual-community-label">Manual community cards</span>
-                            <input type="text" id="community-cards" placeholder="e.g. Qh Jd 7c" maxlength="80">
-                        </label>
-                    </details>
+                        <div class="card-warning" id="card-warning" aria-live="polite"></div>
 
-                    <label class="input-group" for="chips">
-                        <span id="chips-label">Chips</span>
-                        <input type="number" id="chips" placeholder="100" min="1" value="100">
-                    </label>
+                        <div class="context-grid" aria-labelledby="table-context-label">
+                            <div class="section-label full-row" id="table-context-label">Table Context</div>
+                            <label class="input-group" for="chips">
+                                <span id="chips-label">Stack</span>
+                                <input type="number" id="chips" placeholder="100" min="1" value="100">
+                            </label>
 
-                    <label class="input-group" for="pot">
-                        <span id="pot-label">Pot</span>
-                        <input type="number" id="pot" placeholder="0" min="0" value="0">
-                    </label>
+                            <label class="input-group" for="pot">
+                                <span id="pot-label">Pot</span>
+                                <input type="number" id="pot" placeholder="0" min="0" value="0">
+                            </label>
 
-                    <label class="input-group" for="position">
-                        <span id="position-label">Position</span>
-                        <select id="position">
-                            <option value="unknown">Unknown</option>
-                            <option value="UTG">UTG = early position</option>
-                            <option value="HJ">HJ = middle/late position</option>
-                            <option value="CO">CO = middle/late position</option>
-                            <option value="BTN">BTN = dealer button</option>
-                            <option value="SB">SB = blinds</option>
-                            <option value="BB">BB = blinds</option>
-                        </select>
-                    </label>
+                            <label class="input-group" for="position">
+                                <span id="position-label">Position</span>
+                                <select id="position">
+                                    <option value="unknown">Unknown</option>
+                                    <option value="UTG">UTG</option>
+                                    <option value="HJ">HJ</option>
+                                    <option value="CO">CO</option>
+                                    <option value="BTN">BTN</option>
+                                    <option value="SB">SB</option>
+                                    <option value="BB">BB</option>
+                                </select>
+                            </label>
 
-                    <label class="input-group" for="players">
-                        <span id="players-label">Players</span>
-                        <select id="players">
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5</option>
-                            <option value="6" selected>6</option>
-                            <option value="7">7</option>
-                            <option value="8">8</option>
-                            <option value="9">9</option>
-                        </select>
-                    </label>
+                            <label class="input-group" for="players">
+                                <span id="players-label">Players</span>
+                                <select id="players">
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6" selected>6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                    <option value="9">9</option>
+                                </select>
+                            </label>
+                        </div>
 
-                    <label class="input-group" for="action-history">
-                        <span id="action-history-label">Action History</span>
-                        <textarea id="action-history" rows="3" maxlength="1000" placeholder="Example: UTG folds, HJ raises to 2.5BB, BTN calls..."></textarea>
-                    </label>
+                        <details class="action-details">
+                            <summary id="action-history-label">Action History</summary>
+                            <textarea id="action-history" rows="3" maxlength="1000" placeholder="e.g. UTG folds, HJ raises to 2.5BB, BTN calls..."></textarea>
+                        </details>
 
-                    <button id="update-game-btn" class="btn-primary" type="button">Update Game Info</button>
-                </div>
-            </section>
+                        <input type="hidden" id="hand-cards">
+                        <input type="hidden" id="community-cards">
+
+                        <button id="update-game-btn" class="btn-primary" type="button">Use This Hand</button>
+                    </div>
+                </section>
+            </div>
 
             <section class="chat-container" aria-label="Poker chat">
+                <div class="chat-header">
+                    <div>
+                        <h2 id="chat-title">Coach Chat</h2>
+                        <p id="chat-subtitle">Ask for a decision, a concept, or a full hand review.</p>
+                    </div>
+                    <div class="status-pill" id="state-pill">Ready</div>
+                </div>
+
                 <div class="chat-messages" id="chat-messages">
                     <article class="message bot-message">
                         <img src="assets/joker-avatar.png" alt="StackSensei avatar" class="bot-avatar">
@@ -116,15 +155,16 @@
                     <button type="button" class="quick-question-btn">Analyze this hand</button>
                 </div>
 
-                <div class="input-controls">
-                    <button id="voice-btn" class="tool-button" type="button" title="Voice input">Mic</button>
-                    <button id="read-aloud-btn" class="tool-button" type="button" title="Read last response">Read</button>
-                    <div id="voice-status" class="voice-status" aria-live="polite"></div>
-                </div>
-
                 <form class="input-wrapper" id="chat-form">
-                    <input type="text" id="user-input" placeholder="Ask a poker question..." autocomplete="off">
-                    <button id="send-btn" class="send-btn" type="submit">Send</button>
+                    <div class="text-input-row">
+                        <input type="text" id="user-input" placeholder="Ask a poker question..." autocomplete="off">
+                        <button id="send-btn" class="send-btn" type="submit">Send</button>
+                    </div>
+                    <div class="input-tools">
+                        <button id="voice-btn" class="tool-button" type="button" title="Voice input">Mic</button>
+                        <button id="read-aloud-btn" class="tool-button" type="button" title="Read last response">Read</button>
+                        <div id="voice-status" class="voice-status" aria-live="polite"></div>
+                    </div>
                 </form>
             </section>
         </main>
