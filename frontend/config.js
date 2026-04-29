@@ -1,2 +1,1 @@
-window.STACKSENSEI_API_BASE_URL = window.STACKSENSEI_API_BASE_URL || "http://localhost:8000";
-
+window.STACKSENSEI_API_BASE_URL = window.STACKSENSEI_API_BASE_URL || "https://pokerbot-eaz9.onrender.com";
