@@ -10,13 +10,14 @@ Position = Literal["UTG", "HJ", "CO", "BTN", "SB", "BB", "unknown"]
 class GameState(BaseModel):
     handCards: str = Field(default="", max_length=32)
     communityCards: str = Field(default="", max_length=80)
+    actionHistory: str = Field(default="", max_length=1000)
     chips: float = Field(default=100, gt=0)
     pot: float = Field(default=0, ge=0)
     position: Position = "unknown"
     players: int = Field(default=6, ge=2, le=9)
     opponents: Optional[int] = Field(default=None, ge=1, le=8)
 
-    @field_validator("handCards", "communityCards", mode="before")
+    @field_validator("handCards", "communityCards", "actionHistory", mode="before")
     @classmethod
     def sanitize_card_text(cls, value: object) -> str:
         if value is None:
@@ -67,4 +68,3 @@ class HealthResponse(BaseModel):
     version: str
     deepseek_configured: bool
     local_model_enabled: bool
-

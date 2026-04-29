@@ -24,42 +24,73 @@
             <section class="game-panel" aria-labelledby="game-title">
                 <h2 id="game-title">Current Game Info</h2>
                 <div class="panel-content">
-                    <label class="input-group" for="hand-cards">
-                        <span>Hand Cards</span>
-                        <input type="text" id="hand-cards" placeholder="e.g. Ah Ks" maxlength="32">
-                    </label>
+                    <p class="helper-text" id="notation-helper">New to poker notation? Use the dropdowns. StackSensei will convert your cards automatically.</p>
 
-                    <label class="input-group" for="community-cards">
-                        <span>Community Cards</span>
-                        <input type="text" id="community-cards" placeholder="e.g. Qh Jd 7c" maxlength="80">
-                    </label>
+                    <div class="card-section">
+                        <div class="section-label" id="hand-cards-label">Hand Cards</div>
+                        <div class="card-grid compact" id="hole-card-selectors"></div>
+                    </div>
+
+                    <div class="card-section">
+                        <div class="section-label" id="community-cards-label">Community Cards</div>
+                        <div class="card-grid" id="community-card-selectors"></div>
+                    </div>
+
+                    <div class="card-warning" id="card-warning" aria-live="polite"></div>
+
+                    <details class="advanced-input">
+                        <summary id="advanced-summary">Advanced manual input</summary>
+                        <label class="input-group" for="hand-cards">
+                            <span id="manual-hand-label">Manual hand cards</span>
+                            <input type="text" id="hand-cards" placeholder="e.g. Ah Ks" maxlength="32">
+                        </label>
+
+                        <label class="input-group" for="community-cards">
+                            <span id="manual-community-label">Manual community cards</span>
+                            <input type="text" id="community-cards" placeholder="e.g. Qh Jd 7c" maxlength="80">
+                        </label>
+                    </details>
 
                     <label class="input-group" for="chips">
-                        <span>Chips</span>
+                        <span id="chips-label">Chips</span>
                         <input type="number" id="chips" placeholder="100" min="1" value="100">
                     </label>
 
                     <label class="input-group" for="pot">
-                        <span>Pot</span>
+                        <span id="pot-label">Pot</span>
                         <input type="number" id="pot" placeholder="0" min="0" value="0">
                     </label>
 
                     <label class="input-group" for="position">
-                        <span>Position</span>
+                        <span id="position-label">Position</span>
                         <select id="position">
                             <option value="unknown">Unknown</option>
-                            <option value="UTG">UTG</option>
-                            <option value="HJ">HJ</option>
-                            <option value="CO">CO</option>
-                            <option value="BTN">BTN</option>
-                            <option value="SB">SB</option>
-                            <option value="BB">BB</option>
+                            <option value="UTG">UTG = early position</option>
+                            <option value="HJ">HJ = middle/late position</option>
+                            <option value="CO">CO = middle/late position</option>
+                            <option value="BTN">BTN = dealer button</option>
+                            <option value="SB">SB = blinds</option>
+                            <option value="BB">BB = blinds</option>
                         </select>
                     </label>
 
                     <label class="input-group" for="players">
-                        <span>Players</span>
-                        <input type="number" id="players" min="2" max="9" value="6">
+                        <span id="players-label">Players</span>
+                        <select id="players">
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6" selected>6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                        </select>
+                    </label>
+
+                    <label class="input-group" for="action-history">
+                        <span id="action-history-label">Action History</span>
+                        <textarea id="action-history" rows="3" maxlength="1000" placeholder="Example: UTG folds, HJ raises to 2.5BB, BTN calls..."></textarea>
                     </label>
 
                     <button id="update-game-btn" class="btn-primary" type="button">Update Game Info</button>
@@ -103,4 +134,3 @@
     <script src="app.js"></script>
 </body>
 </html>
-

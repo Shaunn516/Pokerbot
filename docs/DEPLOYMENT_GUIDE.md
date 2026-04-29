@@ -22,6 +22,8 @@ The local project can prepare and verify:
    - `frontend/config.js` loads before `frontend/app.js`.
    - The frontend calls `window.STACKSENSEI_API_BASE_URL`.
    - No user API-key form is required.
+   - Beginner card selectors convert ranks and suits to backend notation such as `As Kh`.
+   - The chat panel keeps a fixed height and scrolls message history internally.
 5. Deployment settings:
    - Render backend commands and environment variables.
    - Vercel frontend root/static settings.
@@ -123,7 +125,18 @@ https://your-vercel-app.vercel.app,http://localhost:3000,http://localhost:5173,h
 | `CORS_ORIGINS` | `https://your-frontend.vercel.app,http://localhost:3000,http://localhost:5173,http://localhost:8000` |
 | `ENABLE_LOCAL_MODEL` | `false` |
 
-Do not put `DEEPSEEK_API_KEY` in frontend files, Vercel public environment variables, browser localStorage, or GitHub.
+Do not put `DEEPSEEK_API_KEY` in frontend files, Vercel public environment variables, browser localStorage, or GitHub. Users do not need their own API keys; the key stays on Render.
+
+## Current Product Behavior
+
+- StackSensei supports casual chat, capability questions, poker concept explanations, and hand analysis.
+- Structured labels are reserved for specific hand-analysis requests:
+  - English: `Recommended Action:`, `Reasoning:`, `Risk Note:`
+  - Chinese: `建议行动：`, `理由：`, `风险提示：`
+- Incomplete recommendation requests should ask for missing details such as hole cards, position, pot size, and current bet or action history.
+- The frontend includes beginner card selectors for hole cards, flop, turn, and river. The selectors convert suits to `s`, `h`, `d`, `c` and `10` to `T`.
+- Advanced users can still use the collapsible manual card input.
+- Deployment remains Vercel frontend plus Render FastAPI backend plus a server-side DeepSeek key.
 
 ## Common Issues
 
@@ -143,9 +156,11 @@ Backend:
 Frontend:
 
 - Open the Vercel URL.
-- Submit one English poker question.
-- Submit one Chinese poker question.
-- Confirm the chatbot returns an action and explanation.
+- Submit "Can you chat?" and confirm it does not use the hand-analysis labels.
+- Submit "你可以聊天吗？" and confirm it replies naturally in Chinese without `建议行动：`.
+- Submit one real hand-analysis question with hole cards, position, pot, and action context; confirm the structured recommendation appears.
+- Use the card selectors to produce `As Kh` and `Qh Jd 7c`.
+- Add enough messages to confirm the chat panel stays fixed and message history scrolls.
 - Confirm the browser console has no major CORS or network errors.
 
 If something fails:

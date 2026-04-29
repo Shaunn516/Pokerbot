@@ -1,6 +1,6 @@
 # StackSensei
 
-StackSensei is a publicly deployable Texas Hold'em learning chatbot that gives action-first, beginner-friendly poker coaching through a static frontend and a FastAPI backend.
+StackSensei is a publicly deployable Texas Hold'em learning chatbot that can chat lightly as a card-master coach, explain poker concepts, and give beginner-friendly hand analysis through a static frontend and a FastAPI backend.
 
 ## Public MVP Architecture
 
@@ -13,13 +13,15 @@ flowchart LR
     Backend --> Frontend
 ```
 
-This MVP is DeepSeek-only. Users do not download a zip, configure a local model, or enter their own API key. The backend reads `DEEPSEEK_API_KEY` from server environment variables.
+This MVP is DeepSeek-only. Users do not download a zip, configure a local model, or enter their own API key. The backend reads `DEEPSEEK_API_KEY` from Render server environment variables only.
 
 ## Features
 
-- Action-first poker advice with consistent response sections.
+- Casual chat, capability answers, poker concept explanations, and hand analysis.
+- Structured recommendation sections are used only when the user asks for a specific poker hand or decision analysis.
 - English and Chinese UI/replies.
-- Game state panel for cards, pot, stack, position, and player count.
+- Beginner card selectors that convert ranks and suits into standard poker notation such as `As Kh` and `Qh Jd 7c`.
+- Game state panel for cards, action history, pot, stack, position, and player count.
 - Voice input and text-to-speech where supported by the browser.
 - Static frontend that can be hosted on Vercel or Netlify.
 - FastAPI backend with validation, CORS configuration, health check, and tests.
@@ -85,14 +87,14 @@ For production, set this value to your deployed backend URL.
 
 Backend:
 
-- Deploy `backend/` to Render, Railway, or Fly.io.
+- Deploy `backend/` to Render.
 - Set `DEEPSEEK_API_KEY`, `CORS_ORIGINS`, and `ENABLE_LOCAL_MODEL=false`.
 - Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 - Health check path: `/health`
 
 Frontend:
 
-- Deploy `frontend/` to Vercel or Netlify as a static site.
+- Deploy `frontend/` to Vercel as a static site.
 - Configure `window.STACKSENSEI_API_BASE_URL` to point to the deployed backend.
 - Add the final frontend URL to backend `CORS_ORIGINS`.
 
@@ -144,6 +146,15 @@ window.STACKSENSEI_API_BASE_URL = window.STACKSENSEI_API_BASE_URL || "https://yo
 ```
 
 After Vercel gives you the final frontend URL, add that URL to Render `CORS_ORIGINS` and redeploy the backend.
+
+## Product Behavior Notes
+
+- Users never provide or store API keys in the browser.
+- StackSensei behaves like a witty card master and friendly poker coach, with light table-side personality.
+- Casual messages such as "Can you chat?" or "你可以聊天吗？" receive natural conversational replies.
+- Capability and poker-concept questions are answered in plain coaching style.
+- Specific hand-analysis requests use `Recommended Action:`, `Reasoning:`, `Risk Note:` in English or `建议行动：`, `理由：`, `风险提示：` in Chinese.
+- If a user asks for a recommendation without enough details, StackSensei asks for missing hand cards, position, pot size, and current bet or action history instead of pretending it knows the right action.
 
 ## Model Note
 

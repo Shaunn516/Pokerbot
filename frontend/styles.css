@@ -28,7 +28,8 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
     font: inherit;
 }
 
@@ -114,6 +115,8 @@ h1 {
     grid-template-columns: 360px minmax(0, 1fr);
     gap: 18px;
     margin-top: 18px;
+    align-items: start;
+    min-height: 0;
 }
 
 .game-panel,
@@ -137,19 +140,29 @@ h1 {
     gap: 14px;
 }
 
+.helper-text {
+    margin-bottom: 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.45;
+}
+
 .input-group {
     display: grid;
     gap: 7px;
 }
 
-.input-group span {
+.input-group span,
+.section-label,
+.card-selector-label {
     color: var(--muted);
     font-size: 13px;
     font-weight: 700;
 }
 
 input,
-select {
+select,
+textarea {
     width: 100%;
     min-height: 44px;
     border: 1px solid var(--border);
@@ -160,9 +173,68 @@ select {
     outline: none;
 }
 
+textarea {
+    min-height: 88px;
+    padding: 12px;
+    resize: vertical;
+    line-height: 1.45;
+}
+
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
     border-color: var(--gold);
+}
+
+.card-section {
+    display: grid;
+    gap: 10px;
+}
+
+.card-grid {
+    display: grid;
+    gap: 10px;
+}
+
+.card-grid.compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.card-selector {
+    display: grid;
+    grid-template-columns: minmax(64px, 0.55fr) minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: 8px;
+    align-items: center;
+}
+
+.card-selector select {
+    min-height: 40px;
+    padding: 0 8px;
+}
+
+.advanced-input {
+    border: 1px solid rgba(244, 201, 93, 0.18);
+    border-radius: 8px;
+    padding: 12px;
+    background: rgba(14, 18, 21, 0.58);
+}
+
+.advanced-input summary {
+    color: var(--gold);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.advanced-input .input-group {
+    margin-top: 12px;
+}
+
+.card-warning {
+    min-height: 18px;
+    color: #ffd875;
+    font-size: 13px;
+    line-height: 1.4;
 }
 
 .btn-primary,
@@ -179,15 +251,17 @@ select:focus {
 }
 
 .chat-container {
-    min-height: 680px;
+    height: clamp(620px, calc(100vh - 280px), 760px);
     display: grid;
     grid-template-rows: minmax(0, 1fr) auto auto auto;
     overflow: hidden;
+    min-height: 0;
 }
 
 .chat-messages {
     overflow-y: auto;
     padding: 22px;
+    min-height: 0;
 }
 
 .message {
@@ -297,7 +371,7 @@ input:disabled {
     }
 
     .chat-container {
-        min-height: 620px;
+        height: 640px;
     }
 }
 
@@ -321,8 +395,12 @@ input:disabled {
         grid-template-columns: 1fr;
     }
 
+    .card-grid.compact,
+    .card-selector {
+        grid-template-columns: 1fr;
+    }
+
     .message-content {
         max-width: 88%;
     }
 }
-
