@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -6,6 +6,8 @@ from pydantic import BaseModel, Field, field_validator
 Language = Literal["en", "zh"]
 Mode = Literal["learn", "practice", "analyze", "chat"]
 Position = Literal["UTG", "HJ", "CO", "BTN", "SB", "BB", "unknown"]
+Difficulty = Literal["beginner", "intermediate"]
+Street = Literal["preflop", "flop", "turn", "river", "random"]
 
 
 class GameState(BaseModel):
@@ -147,6 +149,90 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     action: str
     reply: str
+
+
+class PracticeStepState(BaseModel):
+    scenarioId: str
+    scenarioTitle: str
+    stepIndex: int = Field(..., ge=0)
+    street: str
+    heroPosition: str
+    heroCards: str
+    boardCards: str = ""
+    pot: float = Field(..., ge=0)
+    stack: float = Field(..., gt=0)
+    actionHistory: str
+    summaryText: str
+    availableActions: list[str]
+    recommendedAction: str
+    beginnerTip: str
+    isComplete: bool = False
+
+
+class PracticeScenarioResponse(BaseModel):
+    scenarioId: str
+    title: str
+    difficulty: str
+    theme: str
+    language: Language
+    steps: list[PracticeStepState]
+    currentStep: PracticeStepState
+
+
+class PracticeActionRequest(BaseModel):
+    scenarioId: str = Field(..., min_length=1, max_length=120)
+    stepIndex: int = Field(..., ge=0)
+    userAction: str = Field(..., min_length=1, max_length=120)
+    language: Optional[Language] = "en"
+
+    @field_validator("scenarioId", "userAction")
+    @classmethod
+    def sanitize_required_text(cls, value: str) -> str:
+        text = value.strip()
+        if not text:
+            raise ValueError("value must not be empty")
+        return " ".join(text.split())
+
+
+class PracticeActionFeedback(BaseModel):
+    isReasonable: bool
+    yourChoice: str
+    coachSuggestion: str
+    why: str
+    beginnerTip: str
+    nextStep: str
+    formatted: str
+
+
+class PracticeActionResponse(BaseModel):
+    feedback: PracticeActionFeedback
+    nextState: Optional[PracticeStepState] = None
+    isComplete: bool
+    summary: Optional[str] = None
+
+
+class LearnQuizRequest(BaseModel):
+    lessonId: str = Field(default="", max_length=120)
+    lessonTitle: str = Field(default="", max_length=200)
+    language: Optional[Language] = "en"
+
+    @field_validator("lessonId", "lessonTitle", mode="before")
+    @classmethod
+    def sanitize_quiz_text(cls, value: object) -> str:
+        if value is None:
+            return ""
+        text = str(value).strip()
+        return " ".join(text.split())
+
+
+class LearnQuizResponse(BaseModel):
+    question: str
+    options: list[str]
+    correctAnswer: str
+    explanation: str
+    lessonId: str
+    lessonTitle: str = ""
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class HealthResponse(BaseModel):

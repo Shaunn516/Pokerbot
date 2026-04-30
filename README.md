@@ -110,6 +110,12 @@ Supported modes are `learn`, `practice`, `analyze`, and `chat`. `mode`, `practic
 
 Important behavior: `gameState` is context only. Cards, board cards, or pot values do not force hand analysis. StackSensei uses structured analysis only when the latest user message explicitly asks for hand review or decision advice.
 
+Additional local endpoints support richer Learn and Practice experiences without calling DeepSeek for every step:
+
+- `GET /api/practice/scenario?difficulty=beginner&street=random&language=en` returns a template-based practice scenario.
+- `POST /api/practice/action` accepts `scenarioId`, `stepIndex`, `userAction`, and `language`, then returns educational feedback plus the next practice state when available.
+- `POST /api/learn/quiz` accepts `lessonId`, `lessonTitle`, and `language`, then returns a randomized local quiz question with options, answer, and explanation.
+
 ## Deployment Overview
 
 Backend:
@@ -181,6 +187,7 @@ After Vercel gives you the final frontend URL, add that URL to Render `CORS_ORIG
 - Learn / Practice / Analyze modes are supported without changing the deployment architecture.
 - Learn mode can use `lessonState` for lesson steps and quiz feedback.
 - Practice mode can use multi-step `practiceState` for scenario-based coaching.
+- Practice scenarios and Learn quizzes are generated from local templates/banks for low latency.
 - StackSensei behaves like a witty card master and friendly poker coach, with light table-side personality.
 - Casual messages such as "Can you chat?" or "你可以聊天吗？" receive natural conversational replies.
 - Capability and poker-concept questions are answered in plain coaching style.

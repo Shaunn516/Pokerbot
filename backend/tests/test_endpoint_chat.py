@@ -98,3 +98,27 @@ def test_api_poker_chat_accepts_learn_request(monkeypatch):
     assert response.status_code == 200
     assert response.json()["action"] == ""
     assert "Simple Explanation" in response.json()["reply"]
+
+
+def test_api_poker_chat_analyze_mode_casual_message_does_not_force_hand_analysis(monkeypatch):
+    async def fake_call_deepseek(messages, settings):
+        joined = "\n".join(message["content"] for message in messages)
+        assert "Detected intent: casual_chat" in joined
+        assert "Recommended Action:" not in joined
+        return "Rough run. Take a breath and keep decisions clean."
+
+    monkeypatch.setattr("app.main.call_deepseek", fake_call_deepseek)
+    client = TestClient(app)
+
+    response = client.post(
+        "/api/poker-chat",
+        json={
+            "message": "Bad luck today",
+            "language": "en",
+            "mode": "analyze",
+            "gameState": {"handCards": "As Kh", "communityCards": "Qh Jd 7c", "pot": 24, "position": "BTN"},
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["action"] == ""
