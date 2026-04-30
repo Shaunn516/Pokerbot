@@ -101,11 +101,12 @@ For production, set this value to your deployed backend URL.
     "pot": 24,
     "position": "BTN"
   },
-  "practiceState": null
+  "practiceState": null,
+  "lessonState": null
 }
 ```
 
-Supported modes are `learn`, `practice`, `analyze`, and `chat`. `mode` and `practiceState` are optional, so older frontend requests continue to work.
+Supported modes are `learn`, `practice`, `analyze`, and `chat`. `mode`, `practiceState`, and `lessonState` are optional, so older frontend requests continue to work.
 
 Important behavior: `gameState` is context only. Cards, board cards, or pot values do not force hand analysis. StackSensei uses structured analysis only when the latest user message explicitly asks for hand review or decision advice.
 
@@ -178,6 +179,8 @@ After Vercel gives you the final frontend URL, add that URL to Render `CORS_ORIG
 - Users never provide or store API keys in the browser.
 - The public backend reads `DEEPSEEK_API_KEY` only from server-side Render environment variables.
 - Learn / Practice / Analyze modes are supported without changing the deployment architecture.
+- Learn mode can use `lessonState` for lesson steps and quiz feedback.
+- Practice mode can use multi-step `practiceState` for scenario-based coaching.
 - StackSensei behaves like a witty card master and friendly poker coach, with light table-side personality.
 - Casual messages such as "Can you chat?" or "你可以聊天吗？" receive natural conversational replies.
 - Capability and poker-concept questions are answered in plain coaching style.

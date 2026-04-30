@@ -1,5 +1,5 @@
 from app.intent import Intent, detect_user_intent
-from app.schemas import ChatRequest, GameState, PracticeState
+from app.schemas import ChatRequest, GameState, LessonState, PracticeState
 
 
 def detect_intent(request: ChatRequest) -> Intent:
@@ -8,6 +8,7 @@ def detect_intent(request: ChatRequest) -> Intent:
         request.mode,
         request.gameState,
         request.practiceState,
+        request.lessonState,
     )
 
 
@@ -21,20 +22,21 @@ def build_messages(request: ChatRequest) -> list[dict[str, str]]:
         "Reply in the user's language. Keep the tone clear, concise, warm, and beginner-friendly. "
         "Light character flavor is welcome, but do not overdo roleplay. "
         "Never guarantee profit, gambling success, or certainty. "
-        "The user's latest message determines intent. gameState and practiceState are optional context only."
+        "The user's latest message and explicit mode determine intent. "
+        "gameState is optional context only and never forces hand analysis. "
+        "practiceState is used only for practice mode or practice questions."
     )
 
-    intent_prompt = _intent_prompt(intent, response_language)
-    system_prompt = "\n\n".join([shared_prompt, intent_prompt])
-    user_prompt = _user_prompt(request, intent, response_language)
-
     return [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_prompt},
+        {"role": "system", "content": "\n\n".join([shared_prompt, _intent_prompt(intent, response_language)])},
+        {"role": "user", "content": _user_prompt(request, intent, response_language)},
     ]
 
 
-def extract_action(reply: str, language: str) -> str:
+def extract_action(reply: str, language: str, practice_state: PracticeState | None = None) -> str:
+    if practice_state and practice_state.recommendedAction:
+        return practice_state.recommendedAction
+
     labels = ["Recommended Action:", "建议行动：", "建议行动:"]
     for line in reply.splitlines():
         stripped = line.strip()
@@ -56,22 +58,70 @@ def _contains_chinese(text: str) -> bool:
 
 
 def _intent_prompt(intent: Intent, response_language: str) -> str:
-    if intent == "casual_chat":
+    if intent in {"learn_concept", "lesson_explanation"} and response_language == "Chinese":
         return (
-            "Intent: casual_chat. Reply naturally as a friendly poker coach. "
-            "Do not analyze the current hand unless the user explicitly asks. "
-            "Do not use structured recommendation labels such as Recommended Action, Reasoning, Risk Note, 建议行动, 理由, or 风险提示."
+            f"Intent: {intent}. Teach the lesson or concept with simple beginner language. "
+            "Use lessonState when available. Avoid solver jargon and keep it concise. Use this exact format:\n"
+            "简单解释：\n"
+            "举个例子：\n"
+            "新手记住："
         )
-    if intent == "capability_question":
+    if intent in {"learn_concept", "lesson_explanation"}:
         return (
-            "Intent: capability_question. Explain simply that StackSensei can teach poker from zero, explain rules and terms, "
-            "guide practice hands, analyze real hands when asked, and chat casually as a coach. "
-            "Do not use structured hand analysis labels."
+            f"Intent: {intent}. Teach the lesson or concept with simple beginner language. "
+            "Use lessonState when available. Avoid solver jargon and keep it concise. Use this exact format:\n"
+            "Simple Explanation:\n"
+            "Example:\n"
+            "Beginner Tip:"
         )
-    if intent == "poker_concept_question":
+    if intent == "quiz_feedback" and response_language == "Chinese":
         return (
-            "Intent: poker_concept_question. Explain the concept for beginners using a one-sentence explanation, "
-            "a simple example, and a beginner tip. Do not analyze current gameState or give a current-hand recommendation unless asked."
+            "Intent: quiz_feedback. Use lessonState.selectedAnswer and lessonState.correctAnswer. "
+            "Say whether the answer is correct, explain simply, encourage the learner, and suggest the next step. "
+            "Use this exact format:\n"
+            "答题反馈：\n"
+            "为什么：\n"
+            "下一步："
+        )
+    if intent == "quiz_feedback":
+        return (
+            "Intent: quiz_feedback. Use lessonState.selectedAnswer and lessonState.correctAnswer. "
+            "Say whether the answer is correct, explain simply, encourage the learner, and suggest the next step. "
+            "Use this exact format:\n"
+            "Quiz Feedback:\n"
+            "Why:\n"
+            "Next Step:"
+        )
+    if intent == "practice_feedback" and response_language == "Chinese":
+        return (
+            "Intent: practice_feedback. Use practiceState and userAction for scenario-based educational feedback. "
+            "If userAction matches recommendedAction, encourage and explain why it works. "
+            "If it differs, explain the risk gently, give the recommended action, and mention continuing practice is okay. "
+            "Do not treat this as a full poker solver. Use this exact format:\n"
+            "你的选择：\n"
+            "是否合理：\n"
+            "教练建议：\n"
+            "为什么：\n"
+            "下一步："
+        )
+    if intent == "practice_feedback":
+        return (
+            "Intent: practice_feedback. Use practiceState and userAction for scenario-based educational feedback. "
+            "If userAction matches recommendedAction, encourage and explain why it works. "
+            "If it differs, explain the risk gently, give the recommended action, and mention continuing practice is okay. "
+            "Do not treat this as a full poker solver. Use this exact format:\n"
+            "Your Choice:\n"
+            "Is It Reasonable?\n"
+            "Coach Suggestion:\n"
+            "Why:\n"
+            "Next Step:"
+        )
+    if intent == "practice_question":
+        return (
+            "Intent: practice_question. Answer the user's question about the current practice spot. "
+            "Use practiceState as the main context and tie the teaching to position, hand strength, pot, street, action history, "
+            "and beginnerTip if provided. Keep it concise and educational, not a full solver output. "
+            "Do not use hand-analysis labels."
         )
     if intent == "hand_analysis" and response_language == "Chinese":
         return (
@@ -91,28 +141,19 @@ def _intent_prompt(intent: Intent, response_language: str) -> str:
         )
     if intent == "incomplete_hand_request":
         return (
-            "Intent: incomplete_hand_request. The user asks for a decision, but important details are missing. "
-            "Ask for the missing details: hole cards, position, pot, current bet/action history, and board cards if postflop. "
-            "Do not invent data, do not force a fold, and do not use the full structured hand analysis format."
+            "Intent: incomplete_hand_request. Ask for missing details: hole cards, position, pot, current bet/action history, "
+            "and board cards if postflop. Do not invent cards or actions. Do not use full hand-analysis labels."
         )
-    if intent == "practice_feedback" and response_language == "Chinese":
+    if intent == "capability_question":
         return (
-            "Intent: practice_feedback. Use practiceState and userAction for concise educational feedback. "
-            "If recommendedAction exists, compare userAction with recommendedAction. Use this format:\n"
-            "你的选择：\n"
-            "教练建议：\n"
-            "为什么：\n"
-            "新手提示：\n"
-            "下一步："
+            "Intent: capability_question. Explain that StackSensei can teach poker from zero, explain rules and terms, "
+            "guide practice hands, analyze real hands when explicitly asked, and chat casually as a coach. "
+            "Do not use structured hand-analysis labels."
         )
     return (
-        "Intent: practice_feedback. Use practiceState and userAction for concise educational feedback. "
-        "If recommendedAction exists, compare userAction with recommendedAction. Use this format:\n"
-        "Your Choice:\n"
-        "Coach Suggestion:\n"
-        "Why:\n"
-        "Beginner Tip:\n"
-        "Next Step:"
+        "Intent: casual_chat. Reply naturally as StackSensei with light coach personality. "
+        "Do not analyze the current hand unless the user explicitly asks. "
+        "Do not use structured labels such as Recommended Action, Reasoning, Risk Note, 建议行动, 理由, or 风险提示."
     )
 
 
@@ -124,13 +165,14 @@ def _user_prompt(request: ChatRequest, intent: Intent, response_language: str) -
         f"{labels['message']}: {request.message}",
     ]
 
+    if intent in {"lesson_explanation", "learn_concept", "quiz_feedback"} and request.lessonState:
+        parts.append(f"{labels['lesson_state']}:\n{_format_lesson_state(request.lessonState, response_language)}")
+
+    if intent in {"practice_feedback", "practice_question"}:
+        parts.append(f"{labels['practice_state']}:\n{_format_practice_state(request.practiceState, response_language)}")
+
     if intent in {"hand_analysis", "incomplete_hand_request"}:
         parts.append(f"{labels['game_state']}:\n{_format_game_state(request.gameState, response_language)}")
-
-    if intent == "practice_feedback":
-        parts.append(
-            f"{labels['practice_state']}:\n{_format_practice_state(request.practiceState, response_language)}"
-        )
 
     return "\n\n".join(parts)
 
@@ -143,6 +185,7 @@ def _labels(response_language: str) -> dict[str, str]:
             "message": "用户消息",
             "game_state": "牌局上下文",
             "practice_state": "练习上下文",
+            "lesson_state": "课程上下文",
         }
     return {
         "intent": "Detected intent",
@@ -150,6 +193,7 @@ def _labels(response_language: str) -> dict[str, str]:
         "message": "User message",
         "game_state": "Game state",
         "practice_state": "Practice state",
+        "lesson_state": "Lesson state",
     }
 
 
@@ -187,11 +231,14 @@ def _format_game_state(game_state: GameState, response_language: str) -> str:
 def _format_practice_state(practice_state: PracticeState | None, response_language: str) -> str:
     if practice_state is None:
         return "未提供" if response_language == "Chinese" else "not provided"
+    actions = practice_state.availableActions or practice_state.options
 
     if response_language == "Chinese":
         return "\n".join(
             [
                 f"- 场景ID：{practice_state.scenarioId or '未提供'}",
+                f"- 场景标题：{practice_state.scenarioTitle or '未提供'}",
+                f"- 步骤：{practice_state.stepIndex if practice_state.stepIndex is not None else '未提供'}",
                 f"- 街道：{practice_state.street or '未提供'}",
                 f"- 英雄位置：{practice_state.heroPosition or '未提供'}",
                 f"- 英雄手牌：{practice_state.heroCards or '未提供'}",
@@ -199,16 +246,20 @@ def _format_practice_state(practice_state: PracticeState | None, response_langua
                 f"- 底池：{practice_state.pot if practice_state.pot is not None else '未提供'}",
                 f"- 筹码：{practice_state.stack if practice_state.stack is not None else '未提供'}",
                 f"- 行动历史：{practice_state.actionHistory or '未提供'}",
-                f"- 可选行动：{', '.join(practice_state.options) or '未提供'}",
+                f"- 可选行动：{', '.join(actions) or '未提供'}",
                 f"- 用户选择：{practice_state.userAction or '未提供'}",
                 f"- 推荐行动：{practice_state.recommendedAction or '未提供'}",
                 f"- 新手提示：{practice_state.beginnerTip or '未提供'}",
+                f"- 教练上下文：{practice_state.coachContext or '未提供'}",
+                f"- 是否完成：{practice_state.isComplete if practice_state.isComplete is not None else '未提供'}",
             ]
         )
 
     return "\n".join(
         [
             f"- Scenario ID: {practice_state.scenarioId or 'not provided'}",
+            f"- Scenario title: {practice_state.scenarioTitle or 'not provided'}",
+            f"- Step index: {practice_state.stepIndex if practice_state.stepIndex is not None else 'not provided'}",
             f"- Street: {practice_state.street or 'not provided'}",
             f"- Hero position: {practice_state.heroPosition or 'not provided'}",
             f"- Hero cards: {practice_state.heroCards or 'not provided'}",
@@ -216,9 +267,40 @@ def _format_practice_state(practice_state: PracticeState | None, response_langua
             f"- Pot: {practice_state.pot if practice_state.pot is not None else 'not provided'}",
             f"- Stack: {practice_state.stack if practice_state.stack is not None else 'not provided'}",
             f"- Action history: {practice_state.actionHistory or 'not provided'}",
-            f"- Options: {', '.join(practice_state.options) or 'not provided'}",
+            f"- Available actions: {', '.join(actions) or 'not provided'}",
             f"- User action: {practice_state.userAction or 'not provided'}",
             f"- Recommended action: {practice_state.recommendedAction or 'not provided'}",
             f"- Beginner tip: {practice_state.beginnerTip or 'not provided'}",
+            f"- Coach context: {practice_state.coachContext or 'not provided'}",
+            f"- Is complete: {practice_state.isComplete if practice_state.isComplete is not None else 'not provided'}",
+        ]
+    )
+
+
+def _format_lesson_state(lesson_state: LessonState, response_language: str) -> str:
+    if response_language == "Chinese":
+        return "\n".join(
+            [
+                f"- 课程ID：{lesson_state.lessonId or '未提供'}",
+                f"- 课程标题：{lesson_state.lessonTitle or '未提供'}",
+                f"- 步骤：{lesson_state.stepIndex if lesson_state.stepIndex is not None else '未提供'}",
+                f"- 当前主题：{lesson_state.currentTopic or '未提供'}",
+                f"- 测验问题：{lesson_state.quizQuestion or '未提供'}",
+                f"- 已选答案：{lesson_state.selectedAnswer or '未提供'}",
+                f"- 正确答案：{lesson_state.correctAnswer or '未提供'}",
+                f"- 是否完成：{lesson_state.completed if lesson_state.completed is not None else '未提供'}",
+            ]
+        )
+
+    return "\n".join(
+        [
+            f"- Lesson ID: {lesson_state.lessonId or 'not provided'}",
+            f"- Lesson title: {lesson_state.lessonTitle or 'not provided'}",
+            f"- Step index: {lesson_state.stepIndex if lesson_state.stepIndex is not None else 'not provided'}",
+            f"- Current topic: {lesson_state.currentTopic or 'not provided'}",
+            f"- Quiz question: {lesson_state.quizQuestion or 'not provided'}",
+            f"- Selected answer: {lesson_state.selectedAnswer or 'not provided'}",
+            f"- Correct answer: {lesson_state.correctAnswer or 'not provided'}",
+            f"- Completed: {lesson_state.completed if lesson_state.completed is not None else 'not provided'}",
         ]
     )

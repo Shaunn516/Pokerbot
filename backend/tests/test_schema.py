@@ -18,14 +18,46 @@ def test_new_request_format_with_mode_and_practice_state_works():
         message="I chose raise",
         language="en",
         mode="practice",
-        practiceState={"userAction": "raise", "recommendedAction": "call", "options": ["fold", "call", "raise"]},
+        practiceState={
+            "scenarioTitle": "Button open",
+            "stepIndex": 2,
+            "userAction": "raise",
+            "recommendedAction": "call",
+            "availableActions": ["fold", "call", "raise"],
+        },
     )
 
     assert request.mode == "practice"
     assert request.practiceState is not None
     assert request.practiceState.userAction == "raise"
     assert request.practiceState.recommendedAction == "call"
-    assert request.practiceState.options == ["fold", "call", "raise"]
+    assert request.practiceState.availableActions == ["fold", "call", "raise"]
+
+
+def test_learn_request_with_lesson_state_works():
+    request = ChatRequest(
+        message="Continue",
+        mode="learn",
+        lessonState={"lessonId": "basics", "currentTopic": "position", "stepIndex": 1},
+    )
+
+    assert request.mode == "learn"
+    assert request.lessonState is not None
+    assert request.lessonState.currentTopic == "position"
+    assert request.lessonState.stepIndex == 1
+
+
+def test_analyze_request_with_game_state_works():
+    request = ChatRequest(
+        message="Analyze this hand",
+        language="en",
+        mode="analyze",
+        gameState={"handCards": "As Kh", "communityCards": "Qh Jd 7c", "pot": 24, "position": "BTN"},
+    )
+
+    assert request.mode == "analyze"
+    assert request.gameState.handCards == "As Kh"
+    assert request.gameState.position == "BTN"
 
 
 def test_invalid_player_count_fails_validation():

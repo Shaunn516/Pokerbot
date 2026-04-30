@@ -47,6 +47,8 @@ class GameState(BaseModel):
 
 class PracticeState(BaseModel):
     scenarioId: str = Field(default="", max_length=120)
+    scenarioTitle: str = Field(default="", max_length=200)
+    stepIndex: Optional[int] = Field(default=None, ge=0)
     street: str = Field(default="", max_length=32)
     heroPosition: str = Field(default="", max_length=32)
     heroCards: str = Field(default="", max_length=32)
@@ -54,13 +56,17 @@ class PracticeState(BaseModel):
     pot: Optional[float] = Field(default=None, ge=0)
     stack: Optional[float] = Field(default=None, gt=0)
     actionHistory: str = Field(default="", max_length=1000)
+    availableActions: list[str] = Field(default_factory=list, max_length=12)
     options: list[str] = Field(default_factory=list, max_length=12)
     userAction: str = Field(default="", max_length=120)
     recommendedAction: str = Field(default="", max_length=120)
     beginnerTip: str = Field(default="", max_length=500)
+    coachContext: str = Field(default="", max_length=1000)
+    isComplete: Optional[bool] = None
 
     @field_validator(
         "scenarioId",
+        "scenarioTitle",
         "street",
         "heroPosition",
         "heroCards",
@@ -69,6 +75,7 @@ class PracticeState(BaseModel):
         "userAction",
         "recommendedAction",
         "beginnerTip",
+        "coachContext",
         mode="before",
     )
     @classmethod
@@ -78,7 +85,7 @@ class PracticeState(BaseModel):
         text = str(value).strip()
         return " ".join(text.split())
 
-    @field_validator("options", mode="before")
+    @field_validator("availableActions", "options", mode="before")
     @classmethod
     def sanitize_options(cls, value: object) -> list[str]:
         if value is None:
@@ -88,11 +95,39 @@ class PracticeState(BaseModel):
         return [" ".join(str(item).strip().split()) for item in value if str(item).strip()]
 
 
+class LessonState(BaseModel):
+    lessonId: str = Field(default="", max_length=120)
+    lessonTitle: str = Field(default="", max_length=200)
+    stepIndex: Optional[int] = Field(default=None, ge=0)
+    currentTopic: str = Field(default="", max_length=200)
+    quizQuestion: str = Field(default="", max_length=500)
+    selectedAnswer: str = Field(default="", max_length=500)
+    correctAnswer: str = Field(default="", max_length=500)
+    completed: Optional[bool] = None
+
+    @field_validator(
+        "lessonId",
+        "lessonTitle",
+        "currentTopic",
+        "quizQuestion",
+        "selectedAnswer",
+        "correctAnswer",
+        mode="before",
+    )
+    @classmethod
+    def sanitize_text(cls, value: object) -> str:
+        if value is None:
+            return ""
+        text = str(value).strip()
+        return " ".join(text.split())
+
+
 class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=4000)
     gameState: GameState = Field(default_factory=GameState)
     practiceState: Optional[PracticeState] = None
-    language: Language = "en"
+    lessonState: Optional[LessonState] = None
+    language: Optional[Language] = "en"
     mode: Optional[Mode] = None
 
     @field_validator("message")

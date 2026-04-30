@@ -36,11 +36,10 @@ def create_app() -> FastAPI:
     ) -> ChatResponse:
         messages = build_messages(request)
         reply = await call_deepseek(messages, current_settings)
-        action = extract_action(reply, request.language)
+        action = extract_action(reply, request.language, request.practiceState)
         return ChatResponse(action=action, reply=reply)
 
     return app
 
 
 app = create_app()
-

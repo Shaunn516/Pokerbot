@@ -1,16 +1,19 @@
 import re
 from typing import Literal, Optional
 
-from app.schemas import GameState, PracticeState
+from app.schemas import GameState, LessonState, PracticeState
 
 
 Intent = Literal[
-    "casual_chat",
-    "capability_question",
-    "poker_concept_question",
+    "learn_concept",
+    "lesson_explanation",
+    "quiz_feedback",
+    "practice_feedback",
+    "practice_question",
     "hand_analysis",
     "incomplete_hand_request",
-    "practice_feedback",
+    "capability_question",
+    "casual_chat",
 ]
 
 HAND_ANALYSIS_PATTERNS = [
@@ -46,6 +49,7 @@ CONCEPT_MARKERS = [
     "what does raise mean",
     "what does fold mean",
     "什么是底池赔率",
+    "底池赔率",
     "什么是翻牌",
     "什么是转牌",
     "什么是河牌",
@@ -69,25 +73,55 @@ CAPABILITY_MARKERS = [
     "你可以聊天吗",
 ]
 
+PRACTICE_QUESTION_MARKERS = [
+    "why",
+    "what should i do",
+    "ask coach",
+    "coach",
+    "为什么",
+    "怎么想",
+    "问教练",
+    "教练",
+]
+
 
 def detect_user_intent(
     message: str,
     mode: Optional[str] = None,
     game_state: Optional[GameState | dict] = None,
     practice_state: Optional[PracticeState | dict] = None,
+    lesson_state: Optional[LessonState | dict] = None,
 ) -> Intent:
-    """Classify the latest message; state objects are context, not commands."""
+    """Classify the latest user message; state objects are context, not commands."""
 
     text = message.strip()
     lowered = text.lower()
-    practice_user_action = _practice_value(practice_state, "userAction")
-
-    if mode == "practice" and practice_user_action:
-        return "practice_feedback"
 
     if mode == "learn":
+        if _lesson_value(lesson_state, "selectedAnswer") and _lesson_value(lesson_state, "correctAnswer"):
+            return "quiz_feedback"
+        if lesson_state:
+            return "learn_concept" if _asks_concept(lowered) else "lesson_explanation"
         if _asks_concept(lowered):
-            return "poker_concept_question"
+            return "learn_concept"
+        if _asks_capability(lowered):
+            return "capability_question"
+        return "casual_chat"
+
+    if mode == "practice":
+        if _practice_value(practice_state, "userAction"):
+            return "practice_feedback"
+        if _asks_practice_question(lowered) or practice_state:
+            return "practice_question"
+        if _asks_capability(lowered):
+            return "capability_question"
+        return "casual_chat"
+
+    if mode == "analyze":
+        if _asks_for_hand_analysis(lowered):
+            return "hand_analysis" if _has_enough_hand_context(game_state) else "incomplete_hand_request"
+        if _asks_concept(lowered):
+            return "learn_concept"
         if _asks_capability(lowered):
             return "capability_question"
         return "casual_chat"
@@ -96,10 +130,13 @@ def detect_user_intent(
         return "hand_analysis" if _has_enough_hand_context(game_state) else "incomplete_hand_request"
 
     if _asks_concept(lowered):
-        return "poker_concept_question"
+        return "learn_concept"
 
     if _asks_capability(lowered):
         return "capability_question"
+
+    if practice_state and _asks_practice_question(lowered):
+        return "practice_question"
 
     return "casual_chat"
 
@@ -114,6 +151,10 @@ def _asks_concept(lowered: str) -> bool:
 
 def _asks_capability(lowered: str) -> bool:
     return any(marker in lowered for marker in CAPABILITY_MARKERS)
+
+
+def _asks_practice_question(lowered: str) -> bool:
+    return any(marker in lowered for marker in PRACTICE_QUESTION_MARKERS)
 
 
 def _has_enough_hand_context(game_state: Optional[GameState | dict]) -> bool:
@@ -137,6 +178,14 @@ def _state_value(state: GameState | dict, key: str) -> object:
 
 
 def _practice_value(state: Optional[PracticeState | dict], key: str) -> object:
+    if not state:
+        return None
+    if isinstance(state, dict):
+        return state.get(key)
+    return getattr(state, key, None)
+
+
+def _lesson_value(state: Optional[LessonState | dict], key: str) -> object:
     if not state:
         return None
     if isinstance(state, dict):
