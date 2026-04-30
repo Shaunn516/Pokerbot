@@ -19,21 +19,21 @@
 
             <nav class="main-nav" aria-label="Main navigation">
                 <button class="nav-tab active" type="button" data-nav="learn">
-                    <span aria-hidden="true">📖</span>
+                    <span aria-hidden="true">Book</span>
                     <span data-i18n="navLearn">Learn</span>
                 </button>
                 <button class="nav-tab" type="button" data-nav="practice">
-                    <span aria-hidden="true">⚔</span>
+                    <span aria-hidden="true">Cards</span>
                     <span data-i18n="navPractice">Practice</span>
                 </button>
                 <button class="nav-tab" type="button" data-nav="analyze">
-                    <span aria-hidden="true">📈</span>
+                    <span aria-hidden="true">Chart</span>
                     <span data-i18n="navAnalyze">Analyze</span>
                 </button>
             </nav>
 
             <button id="lang-toggle-btn" class="language-toggle" type="button" aria-label="Switch language">
-                <span aria-hidden="true">◎</span>
+                <span aria-hidden="true">Lang</span>
                 <span id="lang-toggle-text">中文</span>
             </button>
         </header>
@@ -50,13 +50,15 @@
 
                         <div class="simple-progress" aria-label="Learning progress">
                             <div class="progress-head">
-                                <span data-i18n="todayPath">Today&apos;s path</span>
-                                <strong>1 / 4</strong>
+                                <span data-i18n="todayPath">Today's path</span>
+                                <strong id="learn-progress-count">0 / 4</strong>
                             </div>
                             <div class="progress-track">
-                                <span></span>
+                                <span id="learn-progress-bar"></span>
                             </div>
                         </div>
+
+                        <section class="lesson-detail glass-panel" id="lesson-detail" aria-live="polite"></section>
                     </div>
 
                     <section class="coach-panel learn-chat" aria-labelledby="learn-chat-title">
@@ -71,7 +73,7 @@
                         <div class="quick-prompts" id="learn-prompts"></div>
                         <form class="chat-form" id="learn-form">
                             <input type="text" id="learn-input" autocomplete="off" data-i18n-placeholder="learnInput" placeholder="Ask about rules, actions, or poker basics...">
-                            <button class="send-button" type="submit" aria-label="Send">➤</button>
+                            <button class="send-button" type="submit" aria-label="Send">Send</button>
                         </form>
                         <p class="tiny-note" data-i18n="coachNote">StackSensei can be wrong. Think carefully and use judgment.</p>
                     </section>
@@ -86,10 +88,10 @@
                                 <span data-i18n="scenarioLabel">Scenario</span>
                                 <select id="scenario-select"></select>
                             </label>
-                            <button class="ghost-icon-button" id="next-scenario-btn" type="button" aria-label="Next scenario">↻</button>
+                            <button class="ghost-icon-button" id="reset-practice-btn" type="button" data-i18n="resetPractice">Reset</button>
                         </div>
                         <div class="table-stage large-table" id="practice-table"></div>
-                        <div class="turn-pill">
+                        <div class="turn-pill" id="practice-turn-pill">
                             <span class="gold-dot"></span>
                             <span id="practice-turn-label">Your turn</span>
                         </div>
@@ -97,10 +99,16 @@
 
                     <aside class="practice-side">
                         <section class="glass-panel action-panel" aria-labelledby="practice-title">
-                            <p class="section-kicker" id="practice-street">Preflop</p>
+                            <p class="section-kicker" id="practice-difficulty">Beginner</p>
                             <h2 id="practice-title" data-i18n="practiceTitle">Practice This Hand</h2>
                             <p class="scenario-summary" id="scenario-summary"></p>
+                            <div class="practice-meta" id="practice-meta"></div>
                             <div class="action-buttons" id="practice-actions"></div>
+                            <div class="practice-controls">
+                                <button class="primary-button ready-pulse" id="start-practice-btn" type="button" data-i18n="startPractice">Start Practice</button>
+                                <button class="primary-button" id="continue-practice-btn" type="button" data-i18n="continuePractice" hidden>Continue</button>
+                                <button class="ghost-button" id="ask-practice-coach-btn" type="button" data-i18n="askCoach">Ask Coach</button>
+                            </div>
                         </section>
 
                         <section class="glass-panel explanation-panel" aria-labelledby="coach-says-title">
@@ -108,7 +116,7 @@
                                 <img src="assets/joker-avatar.png" alt="" class="mini-avatar">
                                 <h3 id="coach-says-title" data-i18n="coachSays">Coach Says</h3>
                             </div>
-                            <div id="practice-feedback" class="practice-feedback"></div>
+                            <div id="practice-feedback" class="practice-feedback coach-slide-in"></div>
                         </section>
 
                         <section class="street-progress" aria-label="Street progress" id="street-progress"></section>
@@ -176,7 +184,7 @@
 
                                 <input type="hidden" id="hand-cards">
                                 <input type="hidden" id="community-cards">
-                                <button id="update-game-btn" class="primary-button" type="button" data-i18n="useHand">Use This Hand</button>
+                                <button id="update-game-btn" class="primary-button ready-pulse" type="button" data-i18n="useHand">Use This Hand</button>
                             </div>
                         </section>
                     </aside>
@@ -193,7 +201,7 @@
                         <div class="quick-prompts" id="analyze-prompts"></div>
                         <form class="chat-form" id="analyze-form">
                             <input type="text" id="analyze-input" autocomplete="off" data-i18n-placeholder="analyzeInput" placeholder="Ask about this hand...">
-                            <button class="send-button" id="send-btn" type="submit" aria-label="Send">➤</button>
+                            <button class="send-button" id="send-btn" type="submit" aria-label="Send">Send</button>
                         </form>
                         <p class="tiny-note" data-i18n="coachNote">StackSensei can be wrong. Think carefully and use judgment.</p>
                     </section>
