@@ -1,6 +1,6 @@
 # StackSensei
 
-StackSensei is a publicly deployable Texas Hold'em learning chatbot that can chat lightly as a card-master coach, explain poker concepts, and give beginner-friendly hand analysis through a static frontend and a FastAPI backend.
+StackSensei is a publicly deployable Texas Hold'em learning chatbot that supports three product paths: Learn, Practice, and Analyze. It can chat lightly as a card-master coach, explain poker concepts, guide practice choices, and give beginner-friendly hand analysis through a static frontend and a FastAPI backend.
 
 ## Public MVP Architecture
 
@@ -17,7 +17,10 @@ This MVP is DeepSeek-only. Users do not download a zip, configure a local model,
 
 ## Features
 
-- Casual chat, capability answers, poker concept explanations, and hand analysis.
+- Learn mode for beginner-friendly rules, terms, and poker concept explanations.
+- Practice mode for lightweight educational feedback on scenario choices.
+- Analyze mode for structured real-hand review when the user explicitly asks for it.
+- Casual chat, capability answers, poker concept explanations, practice feedback, and hand analysis.
 - Structured recommendation sections are used only when the user asks for a specific poker hand or decision analysis.
 - English and Chinese UI/replies.
 - Beginner card selectors that convert ranks and suits into standard poker notation such as `As Kh` and `Qh Jd 7c`.
@@ -82,6 +85,29 @@ For production, set this value to your deployed backend URL.
 | `ENABLE_LOCAL_MODEL` | No | Keep `false` for the public MVP. |
 | `DEEPSEEK_API_ENDPOINT` | No | Optional override for DeepSeek chat completions endpoint. |
 | `DEEPSEEK_MODEL` | No | Defaults to `deepseek-chat`. |
+
+## Backend Chat API
+
+`POST /api/poker-chat` accepts the existing request format and the newer mode-aware format:
+
+```json
+{
+  "message": "Should I call here?",
+  "language": "en",
+  "mode": "analyze",
+  "gameState": {
+    "handCards": "As Kh",
+    "communityCards": "Qh Jd 7c",
+    "pot": 24,
+    "position": "BTN"
+  },
+  "practiceState": null
+}
+```
+
+Supported modes are `learn`, `practice`, `analyze`, and `chat`. `mode` and `practiceState` are optional, so older frontend requests continue to work.
+
+Important behavior: `gameState` is context only. Cards, board cards, or pot values do not force hand analysis. StackSensei uses structured analysis only when the latest user message explicitly asks for hand review or decision advice.
 
 ## Deployment Overview
 
@@ -150,11 +176,16 @@ After Vercel gives you the final frontend URL, add that URL to Render `CORS_ORIG
 ## Product Behavior Notes
 
 - Users never provide or store API keys in the browser.
+- The public backend reads `DEEPSEEK_API_KEY` only from server-side Render environment variables.
+- Learn / Practice / Analyze modes are supported without changing the deployment architecture.
 - StackSensei behaves like a witty card master and friendly poker coach, with light table-side personality.
 - Casual messages such as "Can you chat?" or "你可以聊天吗？" receive natural conversational replies.
 - Capability and poker-concept questions are answered in plain coaching style.
+- Chinese hand-analysis labels are `建议行动：`, `理由：`, and `风险提示：`.
 - Specific hand-analysis requests use `Recommended Action:`, `Reasoning:`, `Risk Note:` in English or `建议行动：`, `理由：`, `风险提示：` in Chinese.
 - If a user asks for a recommendation without enough details, StackSensei asks for missing hand cards, position, pot size, and current bet or action history instead of pretending it knows the right action.
+- Casual messages such as "Bad luck today", "不咋地手气", or "你是谁" do not trigger structured hand analysis even when `gameState` contains cards.
+- Practice feedback is educational and uses scenario context plus `userAction`; it is not a full poker game solver.
 
 ## Model Note
 

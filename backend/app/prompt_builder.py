@@ -1,117 +1,165 @@
-import re
-from typing import Literal
-
-from app.schemas import ChatRequest, GameState
+from app.intent import Intent, detect_user_intent
+from app.schemas import ChatRequest, GameState, PracticeState
 
 
-Intent = Literal[
-    "casual_chat",
-    "capability_question",
-    "poker_concept_question",
-    "hand_analysis",
-    "incomplete_hand_request",
-]
+def detect_intent(request: ChatRequest) -> Intent:
+    return detect_user_intent(
+        request.message,
+        request.mode,
+        request.gameState,
+        request.practiceState,
+    )
 
-CARD_RE = re.compile(r"\b(?:[AKQJT2-9]|10)[shdc]\b", re.IGNORECASE)
-CHINESE_CARD_RE = re.compile(r"(黑桃|红桃|方块|梅花|葵扇|桃|心|砖|草花|梅花)[AKQJ]|[AKQJ](黑桃|红桃|方块|梅花)|(?:黑桃|红桃|方块|梅花)(?:10|[2-9])")
+
+def build_messages(request: ChatRequest) -> list[dict[str, str]]:
+    """Build DeepSeek chat messages with intent-aware response instructions."""
+
+    intent = detect_intent(request)
+    response_language = _response_language(request)
+    shared_prompt = (
+        "You are StackSensei, a witty card master and friendly poker coach for Texas Hold'em learners. "
+        "Reply in the user's language. Keep the tone clear, concise, warm, and beginner-friendly. "
+        "Light character flavor is welcome, but do not overdo roleplay. "
+        "Never guarantee profit, gambling success, or certainty. "
+        "The user's latest message determines intent. gameState and practiceState are optional context only."
+    )
+
+    intent_prompt = _intent_prompt(intent, response_language)
+    system_prompt = "\n\n".join([shared_prompt, intent_prompt])
+    user_prompt = _user_prompt(request, intent, response_language)
+
+    return [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt},
+    ]
+
+
+def extract_action(reply: str, language: str) -> str:
+    labels = ["Recommended Action:", "建议行动：", "建议行动:"]
+    for line in reply.splitlines():
+        stripped = line.strip()
+        for label in labels:
+            if stripped.startswith(label):
+                action = stripped[len(label) :].strip()
+                return action or "See recommendation"
+    return ""
+
+
+def _response_language(request: ChatRequest) -> str:
+    if request.language == "zh" or _contains_chinese(request.message):
+        return "Chinese"
+    return "English"
 
 
 def _contains_chinese(text: str) -> bool:
     return any("\u4e00" <= char <= "\u9fff" for char in text)
 
 
-def _has_cards(text: str) -> bool:
-    return bool(CARD_RE.search(text) or CHINESE_CARD_RE.search(text))
+def _intent_prompt(intent: Intent, response_language: str) -> str:
+    if intent == "casual_chat":
+        return (
+            "Intent: casual_chat. Reply naturally as a friendly poker coach. "
+            "Do not analyze the current hand unless the user explicitly asks. "
+            "Do not use structured recommendation labels such as Recommended Action, Reasoning, Risk Note, 建议行动, 理由, or 风险提示."
+        )
+    if intent == "capability_question":
+        return (
+            "Intent: capability_question. Explain simply that StackSensei can teach poker from zero, explain rules and terms, "
+            "guide practice hands, analyze real hands when asked, and chat casually as a coach. "
+            "Do not use structured hand analysis labels."
+        )
+    if intent == "poker_concept_question":
+        return (
+            "Intent: poker_concept_question. Explain the concept for beginners using a one-sentence explanation, "
+            "a simple example, and a beginner tip. Do not analyze current gameState or give a current-hand recommendation unless asked."
+        )
+    if intent == "hand_analysis" and response_language == "Chinese":
+        return (
+            "Intent: hand_analysis. Use gameState as poker context and strictly format the answer with these Chinese labels:\n"
+            "建议行动：\n"
+            "理由：\n"
+            "风险提示：\n"
+            "Use plain beginner language, mention uncertainty when information is incomplete, and never guarantee profit."
+        )
+    if intent == "hand_analysis":
+        return (
+            "Intent: hand_analysis. Use gameState as poker context and strictly format the answer with these English labels:\n"
+            "Recommended Action:\n"
+            "Reasoning:\n"
+            "Risk Note:\n"
+            "Use plain beginner language, mention uncertainty when information is incomplete, and never guarantee profit."
+        )
+    if intent == "incomplete_hand_request":
+        return (
+            "Intent: incomplete_hand_request. The user asks for a decision, but important details are missing. "
+            "Ask for the missing details: hole cards, position, pot, current bet/action history, and board cards if postflop. "
+            "Do not invent data, do not force a fold, and do not use the full structured hand analysis format."
+        )
+    if intent == "practice_feedback" and response_language == "Chinese":
+        return (
+            "Intent: practice_feedback. Use practiceState and userAction for concise educational feedback. "
+            "If recommendedAction exists, compare userAction with recommendedAction. Use this format:\n"
+            "你的选择：\n"
+            "教练建议：\n"
+            "为什么：\n"
+            "新手提示：\n"
+            "下一步："
+        )
+    return (
+        "Intent: practice_feedback. Use practiceState and userAction for concise educational feedback. "
+        "If recommendedAction exists, compare userAction with recommendedAction. Use this format:\n"
+        "Your Choice:\n"
+        "Coach Suggestion:\n"
+        "Why:\n"
+        "Beginner Tip:\n"
+        "Next Step:"
+    )
 
 
-def _has_required_hand_context(message: str, game_state: GameState) -> bool:
-    has_hole_cards = bool(game_state.handCards.strip() or _has_cards(message))
-    has_position = game_state.position != "unknown" or "position" in message.lower() or "位置" in message
-    has_pot_or_action = game_state.pot > 0 or bool(game_state.actionHistory.strip())
-    return has_hole_cards and has_position and has_pot_or_action
-
-
-def detect_user_intent(message: str, game_state: GameState) -> Intent:
-    """Classify the current user message; game state is context, not intent."""
-
-    message = message.strip()
-    lowered = message.lower()
-
-    capability_markers = [
-        "what can you do",
-        "what do you do",
-        "who are you",
-        "help me with",
-        "你的功能",
-        "你能做什么",
-        "你会什么",
-        "你是谁",
-        "可以帮我",
+def _user_prompt(request: ChatRequest, intent: Intent, response_language: str) -> str:
+    labels = _labels(response_language)
+    parts = [
+        f"{labels['intent']}: {intent}",
+        f"{labels['mode']}: {request.mode or 'not provided'}",
+        f"{labels['message']}: {request.message}",
     ]
-    concept_markers = [
-        "what are pot odds",
-        "what is pot odds",
-        "what is position",
-        "what are outs",
-        "what is equity",
-        "what is range",
-        "what is 3-bet",
-        "what is c-bet",
-        "what is bluff",
-        "pot odds是什么",
-        "底池赔率",
-        "什么是位置",
-        "什么是翻牌",
-        "什么是胜率",
-        "什么是范围",
-        "什么是诈唬",
-        "什么是持续下注",
-        "什么是",
-        "解释",
-    ]
-    explicit_decision_patterns = [
-        r"\bshould i (?:call|bet|fold|raise|jam|shove|all[ -]?in)\b",
-        r"\bwhat should i do(?: here)?\b",
-        r"\banaly[sz]e this hand\b",
-        r"\breview this hand\b",
-        r"\bhow should i play this (?:spot|hand)\b",
-        r"\bcan you analy[sz]e this hand\b",
-        r"这手牌怎么打",
-        r"帮我分析这手牌",
-        r"分析这手牌",
-        r"这手牌应该怎么做",
-        r"我应该(?:跟注|下注|弃牌|加注|全下)吗",
-        r"该不该(?:跟注|下注|弃牌|加注|全下)",
-        r"该(?:call|fold|raise|bet|jam|all.?in)吗",
-        r"怎么打",
-    ]
 
-    if any(marker in lowered for marker in capability_markers):
-        return "capability_question"
-    if any(marker in lowered for marker in concept_markers):
-        return "poker_concept_question"
+    if intent in {"hand_analysis", "incomplete_hand_request"}:
+        parts.append(f"{labels['game_state']}:\n{_format_game_state(request.gameState, response_language)}")
 
-    asks_for_decision = any(re.search(pattern, lowered, re.IGNORECASE) for pattern in explicit_decision_patterns)
-    if asks_for_decision and _has_required_hand_context(message, game_state):
-        return "hand_analysis"
-    if asks_for_decision:
-        return "incomplete_hand_request"
+    if intent == "practice_feedback":
+        parts.append(
+            f"{labels['practice_state']}:\n{_format_practice_state(request.practiceState, response_language)}"
+        )
 
-    return "casual_chat"
+    return "\n\n".join(parts)
 
 
-def detect_intent(request: ChatRequest) -> Intent:
-    """Backward-compatible wrapper for request-based intent detection."""
+def _labels(response_language: str) -> dict[str, str]:
+    if response_language == "Chinese":
+        return {
+            "intent": "识别意图",
+            "mode": "前端模式",
+            "message": "用户消息",
+            "game_state": "牌局上下文",
+            "practice_state": "练习上下文",
+        }
+    return {
+        "intent": "Detected intent",
+        "mode": "Frontend mode",
+        "message": "User message",
+        "game_state": "Game state",
+        "practice_state": "Practice state",
+    }
 
-    return detect_user_intent(request.message, request.gameState)
 
-
-def _format_game_state(game_state: GameState, language: str) -> str:
-    if language == "zh":
+def _format_game_state(game_state: GameState, response_language: str) -> str:
+    if response_language == "Chinese":
         return "\n".join(
             [
                 f"- 手牌：{game_state.handCards or '未提供'}",
                 f"- 公共牌：{game_state.communityCards or '未提供'}",
+                f"- 街道：{game_state.street or '未提供'}",
                 f"- 行动历史：{game_state.actionHistory or '未提供'}",
                 f"- 筹码：{game_state.chips:g}",
                 f"- 底池：{game_state.pot:g}",
@@ -125,6 +173,7 @@ def _format_game_state(game_state: GameState, language: str) -> str:
         [
             f"- Hand cards: {game_state.handCards or 'not provided'}",
             f"- Community cards: {game_state.communityCards or 'not provided'}",
+            f"- Street: {game_state.street or 'not provided'}",
             f"- Action history: {game_state.actionHistory or 'not provided'}",
             f"- Chips: {game_state.chips:g}",
             f"- Pot: {game_state.pot:g}",
@@ -135,94 +184,41 @@ def _format_game_state(game_state: GameState, language: str) -> str:
     )
 
 
-def build_messages(request: ChatRequest) -> list[dict[str, str]]:
-    """Build DeepSeek chat messages with intent-aware response instructions."""
+def _format_practice_state(practice_state: PracticeState | None, response_language: str) -> str:
+    if practice_state is None:
+        return "未提供" if response_language == "Chinese" else "not provided"
 
-    game_state = _format_game_state(request.gameState, request.language)
-    intent = detect_intent(request)
-    user_is_chinese = _contains_chinese(request.message)
+    if response_language == "Chinese":
+        return "\n".join(
+            [
+                f"- 场景ID：{practice_state.scenarioId or '未提供'}",
+                f"- 街道：{practice_state.street or '未提供'}",
+                f"- 英雄位置：{practice_state.heroPosition or '未提供'}",
+                f"- 英雄手牌：{practice_state.heroCards or '未提供'}",
+                f"- 公共牌：{practice_state.boardCards or '未提供'}",
+                f"- 底池：{practice_state.pot if practice_state.pot is not None else '未提供'}",
+                f"- 筹码：{practice_state.stack if practice_state.stack is not None else '未提供'}",
+                f"- 行动历史：{practice_state.actionHistory or '未提供'}",
+                f"- 可选行动：{', '.join(practice_state.options) or '未提供'}",
+                f"- 用户选择：{practice_state.userAction or '未提供'}",
+                f"- 推荐行动：{practice_state.recommendedAction or '未提供'}",
+                f"- 新手提示：{practice_state.beginnerTip or '未提供'}",
+            ]
+        )
 
-    if request.language == "zh" or user_is_chinese:
-        response_language = "Chinese"
-        user_prompt_label = "用户问题"
-        game_state_label = "牌局信息"
-        intent_label = "识别意图"
-    else:
-        response_language = "English"
-        user_prompt_label = "User question"
-        game_state_label = "Game state"
-        intent_label = "Detected intent"
-
-    shared_prompt = (
-        "You are StackSensei, a witty card master and friendly poker coach for learners. "
-        "You can chat normally, but your specialty is helping people learn Texas Hold'em. "
-        "Use light table-side coach flavor and a little humor when it fits, but do not become overly theatrical. "
-        "Respect the user's language: if the user writes Chinese, reply in Chinese; if the user writes English, reply in English. "
-        f"Use {response_language} for this reply unless the user's message clearly switches language. "
-        "Never guarantee profit or gambling success; frame poker guidance as educational."
+    return "\n".join(
+        [
+            f"- Scenario ID: {practice_state.scenarioId or 'not provided'}",
+            f"- Street: {practice_state.street or 'not provided'}",
+            f"- Hero position: {practice_state.heroPosition or 'not provided'}",
+            f"- Hero cards: {practice_state.heroCards or 'not provided'}",
+            f"- Board cards: {practice_state.boardCards or 'not provided'}",
+            f"- Pot: {practice_state.pot if practice_state.pot is not None else 'not provided'}",
+            f"- Stack: {practice_state.stack if practice_state.stack is not None else 'not provided'}",
+            f"- Action history: {practice_state.actionHistory or 'not provided'}",
+            f"- Options: {', '.join(practice_state.options) or 'not provided'}",
+            f"- User action: {practice_state.userAction or 'not provided'}",
+            f"- Recommended action: {practice_state.recommendedAction or 'not provided'}",
+            f"- Beginner tip: {practice_state.beginnerTip or 'not provided'}",
+        ]
     )
-
-    if intent == "hand_analysis" and (request.language == "zh" or user_is_chinese):
-        format_prompt = (
-            "For this hand_analysis request, strictly use these Chinese labels:\n\n"
-            "建议行动：\n"
-            "理由：\n"
-            "风险提示：\n\n"
-            "Give practical, beginner-friendly reasoning and make clear this is educational guidance, not guaranteed profit."
-        )
-    elif intent == "hand_analysis":
-        format_prompt = (
-            "For this hand_analysis request, strictly use these English labels:\n\n"
-            "Recommended Action:\n"
-            "Reasoning:\n"
-            "Risk Note:\n\n"
-            "Give practical, beginner-friendly reasoning and make clear this is educational guidance, not guaranteed profit."
-        )
-    elif intent == "incomplete_hand_request":
-        format_prompt = (
-            "The user is asking for a poker decision, but the available details are incomplete. "
-            "Ask for the missing details before recommending a specific action: hole cards, position, pot size, current bet, and action history as needed. "
-            "Do not invent details, do not force a fold, and do not use structured recommendation labels."
-        )
-    elif intent == "capability_question":
-        format_prompt = (
-            "Explain what StackSensei can do: analyze explicit hand-review requests, explain poker concepts, help beginners understand actions, and chat lightly. "
-            "Do not analyze the current hand unless the user explicitly asks, and do not use structured recommendation labels."
-        )
-    elif intent == "poker_concept_question":
-        format_prompt = (
-            "Explain the poker concept clearly like a coach with a short example. "
-            "Do not apply the current game state to a specific recommendation unless the user explicitly asks, and do not use structured recommendation labels."
-        )
-    else:
-        format_prompt = (
-            "Reply naturally to the user's current message. You may lightly reference poker, variance, or coaching if it fits. "
-            "Do not analyze the current hand unless the user explicitly asks, and do not use structured recommendation labels. "
-            "Keep the reply concise and conversational."
-        )
-
-    system_prompt = "\n\n".join([shared_prompt, format_prompt])
-    if intent in {"hand_analysis", "incomplete_hand_request"}:
-        user_prompt = (
-            f"{intent_label}: {intent}\n\n"
-            f"{game_state_label}:\n"
-            f"{game_state}\n\n"
-            f"{user_prompt_label}: {request.message}"
-        )
-    else:
-        user_prompt = f"{intent_label}: {intent}\n\n{user_prompt_label}: {request.message}"
-
-    return [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_prompt},
-    ]
-
-
-def extract_action(reply: str, language: str) -> str:
-    label = "建议行动：" if language == "zh" else "Recommended Action:"
-    for line in reply.splitlines():
-        stripped = line.strip()
-        if stripped.startswith(label):
-            action = stripped[len(label):].strip()
-            return action or "See recommendation"
-    return "N/A"
