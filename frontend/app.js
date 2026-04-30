@@ -9,7 +9,7 @@ const SUITS = [
     { value: "c", label: "♣", symbol: "♣" }
 ];
 const POSITIONS = ["UTG", "HJ", "CO", "BTN", "SB", "BB"];
-const STREET_ORDER = ["preflop", "flop", "turn", "river"];
+const STREET_ORDER = ["preflop", "flop", "turn", "river", "showdown"];
 const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const CARD_SLOTS = [
@@ -277,6 +277,101 @@ const LESSONS = [
     }
 ];
 
+LESSONS.forEach((lesson) => {
+    const baseStep = lesson.steps[0];
+    const extras = {
+        "hand-flow": [
+            {
+                title: { en: "Preflop comes first", zh: "先从发牌前开始" },
+                explanation: { en: "Before any board cards appear, you decide whether your two cards and position are worth entering the pot.", zh: "公共牌还没出现时，你先根据两张手牌和位置，决定要不要入池。" },
+                bullets: { en: ["Blinds create the first pot.", "Each player has two private cards.", "Tight choices save beginner chips."], zh: ["盲注先形成底池。", "每人先拿两张手牌。", "新手先选紧一点，能少亏很多。"] },
+                visual: ["As", "Kh", "BB"]
+            },
+            {
+                title: { en: "The board arrives in stages", zh: "公共牌分阶段出现" },
+                explanation: { en: "The flop, turn, and river change hand strength. A weak hand can improve, and a strong hand can become risky.", zh: "翻牌、转牌、河牌会改变牌力。弱牌可能变强，强牌也可能变危险。" },
+                bullets: { en: ["Flop: three cards.", "Turn: one card.", "River: final card."], zh: ["翻牌：三张。", "转牌：一张。", "河牌：最后一张。"] },
+                visual: ["Qd", "7s", "3h"]
+            },
+            {
+                title: { en: "Showdown is not always needed", zh: "不一定每手都摊牌" },
+                explanation: { en: "Many pots end when everyone folds to a bet. Winning without showdown is normal poker.", zh: "很多底池会在有人下注、其他人都弃牌时结束。不摊牌赢下底池很正常。" },
+                bullets: { en: ["Bets can win immediately.", "Calling keeps the hand alive.", "Folding ends your investment."], zh: ["下注可能直接赢。", "跟注让牌局继续。", "弃牌停止继续投入。"] },
+                visual: ["back", "back", "Pot"]
+            }
+        ],
+        "position-actions": [
+            {
+                title: { en: "Early position is tighter", zh: "早位要更谨慎" },
+                explanation: { en: "UTG acts with many players behind, so weak hands get punished more often.", zh: "UTG 后面还有很多玩家，弱牌更容易被后面的人压制。" },
+                bullets: { en: ["Play fewer hands early.", "Avoid weak offsuit hands.", "Respect raises behind you."], zh: ["早位少玩牌。", "避开弱杂花牌。", "尊重后面的加注。"] },
+                visual: ["UTG", "HJ", "CO"]
+            },
+            {
+                title: { en: "Late position can pressure", zh: "后位可以施压" },
+                explanation: { en: "CO and BTN can attack blinds because fewer players remain and they often act later postflop.", zh: "CO 和 BTN 可以更常攻击盲注，因为后面玩家更少，翻牌后也常有位置。" },
+                bullets: { en: ["BTN is the best seat.", "Stealing blinds is normal.", "Position turns medium hands playable."], zh: ["BTN 是最好的位置。", "偷盲是正常打法。", "位置能让中等牌更好打。"] },
+                visual: ["CO", "BTN", "BB"]
+            },
+            {
+                title: { en: "Actions depend on the bet", zh: "行动取决于前面有没有下注" },
+                explanation: { en: "If no one bets, you can check or bet. If someone bets, you must fold, call, or raise.", zh: "没人下注时，你可以过牌或下注。有人下注时，你要在弃牌、跟注、加注里选。" },
+                bullets: { en: ["Check means pass without paying.", "Call means match the bet.", "Raise means make it bigger."], zh: ["过牌是不花钱让过。", "跟注是补齐下注。", "加注是把下注变大。"] },
+                visual: ["Check", "Call", "Raise"]
+            }
+        ],
+        "hand-strength": [
+            {
+                title: { en: "Pairs and kickers matter", zh: "对子和踢脚都重要" },
+                explanation: { en: "Top pair is stronger when your side card, the kicker, is high.", zh: "顶对不错，但旁边那张踢脚越大，越不容易被同样对子压制。" },
+                bullets: { en: ["AQ on Q-high board is strong.", "Q9 on Q-high board is weaker.", "Kickers break ties."], zh: ["AQ 在 Q 高牌面很强。", "Q9 在 Q 高牌面弱一些。", "踢脚决定同对子胜负。"] },
+                visual: ["Ah", "Qh", "Qd"]
+            },
+            {
+                title: { en: "Draws are potential", zh: "听牌是潜力" },
+                explanation: { en: "A draw is not made yet, but it can become a strong hand on later streets.", zh: "听牌还没成牌，但后面发到关键牌时可能变成强牌。" },
+                bullets: { en: ["Flush draws need one suit.", "Straight draws need a connecting card.", "Strong draws can bet."], zh: ["同花听牌差一张同花。", "顺子听牌差连接牌。", "强听牌可以主动下注。"] },
+                visual: ["As", "Js", "8s"]
+            },
+            {
+                title: { en: "Board texture changes risk", zh: "牌面结构决定风险" },
+                explanation: { en: "Dry boards have fewer draws. Wet boards create more ways for opponents to improve.", zh: "干燥牌面听牌少；潮湿牌面让对手更容易变强。" },
+                bullets: { en: ["K72 rainbow is dry.", "J109 two-tone is wet.", "Bet sizing changes with texture."], zh: ["K72 彩虹面很干燥。", "J109 两同花很潮湿。", "下注大小要跟牌面变化。"] },
+                visual: ["Js", "10s", "9d"]
+            }
+        ],
+        "avoid-random-calling": [
+            {
+                title: { en: "Name worse hands", zh: "先说出更差的牌" },
+                explanation: { en: "Before calling, ask which worse hands you beat. If you cannot name them, folding may be better.", zh: "跟注前先问：有哪些更差的牌我能赢？如果说不出来，弃牌可能更好。" },
+                bullets: { en: ["Pair beats ace-high.", "Top pair beats worse pairs.", "No pair often needs a draw."], zh: ["对子能赢 A 高。", "顶对能赢更差对子。", "没对子通常需要听牌理由。"] },
+                visual: ["Qh", "7c", "2d"]
+            },
+            {
+                title: { en: "Know what improves you", zh: "知道哪些牌能帮你" },
+                explanation: { en: "Good calls usually have outs: cards that can improve your hand enough to continue.", zh: "好的跟注通常有 outs，也就是后面哪些牌能让你明显变强。" },
+                bullets: { en: ["Flush outs are suit cards.", "Straight outs complete the line.", "Tiny backdoor chances are not enough alone."], zh: ["同花 outs 是同花色牌。", "顺子 outs 能补成顺子。", "很小的后门机会不能单独当理由。"] },
+                visual: ["As", "Js", "4s"]
+            },
+            {
+                title: { en: "Curiosity is expensive", zh: "好奇心很贵" },
+                explanation: { en: "Calling just to see one more card is one of the fastest ways for beginners to lose chips.", zh: "只是想多看一张牌而跟注，是新手最容易慢慢亏筹码的原因之一。" },
+                bullets: { en: ["Have a plan before calling.", "Fold when the story is bad.", "Saving chips is winning long term."], zh: ["跟注前要有计划。", "牌局故事不对就弃。", "省下筹码长期也是赢。"] },
+                visual: ["9d", "4c", "Fold"]
+            }
+        ]
+    };
+    lesson.steps = [baseStep, ...(extras[lesson.id] || [])].slice(0, 4).map((step) => ({
+        ...step,
+        takeaway: step.takeaway || lesson.takeaway,
+        quizQuestion: step.quizQuestion || lesson.quiz.question,
+        quizOptions: step.quizOptions || lesson.quiz.options,
+        correctAnswer: typeof step.correctAnswer === "number" ? step.correctAnswer : lesson.quiz.correctIndex,
+        feedback: step.feedback || lesson.quiz.feedback,
+        correction: step.correction || lesson.quiz.correction
+    }));
+});
+
 const PRACTICE_SCENARIOS = [
     {
         id: "btn-ako-open",
@@ -464,6 +559,106 @@ const PRACTICE_SCENARIOS = [
                 coachTip: { en: "When the draw hits, switch from drawing to value betting.", zh: "听牌成了之后，要从“追牌”切换到“拿价值”。" }
             }
         ]
+    },
+    {
+        id: "bb-defend-small-raise",
+        title: { en: "BB Defend vs Small Raise", zh: "BB 防守小加注" },
+        difficulty: { en: "Beginner", zh: "新手" },
+        summary: { en: "Practice defending playable suited hands from the big blind.", zh: "练习大盲位用可玩同花牌防守。" },
+        finalSummary: {
+            en: { good: "You weighed price, position, and playability.", tip: "Big blind defense depends on price and hand playability." },
+            zh: { good: "你考虑了价格、位置和可玩性。", tip: "大盲防守要看价格和手牌可玩性。" }
+        },
+        steps: [
+            {
+                street: "preflop",
+                heroPosition: "BB",
+                heroCards: ["Qs", "9s"],
+                boardCards: [],
+                pot: 4.5,
+                stack: 98,
+                actionHistory: "BTN raises to 2.5BB, SB folds. Hero is BB.",
+                summaryText: { en: "BTN raises small. You are BB with Q♠ 9♠.", zh: "BTN 小加注。你在 BB，拿着 Q♠ 9♠。" },
+                availableActions: ["fold", "call", "raise"],
+                recommendedAction: "call",
+                feedbackByAction: {
+                    fold: { en: "A bit tight. Suited playable hands can defend at this price.", zh: "有点太紧。这个价格下，同花可玩牌可以防守。" },
+                    call: { en: "Good. You close the action and have a playable suited hand.", zh: "很好。你最后行动，手牌也有可玩性。" },
+                    raise: { en: "Possible sometimes, but calling is simpler for beginners.", zh: "有时可以加注，但对新手来说跟注更简单。" }
+                },
+                nextNarration: { en: "You call and see a flop.", zh: "你跟注，看翻牌。" },
+                coachTip: { en: "In BB, good price makes more hands playable.", zh: "在 BB，价格好会让更多牌可以玩。" },
+                seatAction: { position: "BTN", label: { en: "BTN opens", zh: "BTN 开池" } }
+            },
+            {
+                street: "flop",
+                heroPosition: "BB",
+                heroCards: ["Qs", "9s"],
+                boardCards: ["Qd", "6c", "2s"],
+                pot: 5.5,
+                stack: 97.5,
+                actionHistory: "Hero called preflop. Flop Qd 6c 2s.",
+                summaryText: { en: "You flop top pair. BTN continuation bets small.", zh: "你中了顶对。BTN 小额持续下注。" },
+                availableActions: ["fold", "call", "raise"],
+                recommendedAction: "call",
+                feedbackByAction: {
+                    fold: { en: "Too tight. Top pair is too strong to fold to a small bet.", zh: "太紧了。顶对面对小注不该轻易弃。" },
+                    call: { en: "Good. Keep worse hands in and control the pot.", zh: "很好。保留更差的牌，同时控制底池。" },
+                    raise: { en: "Raising can overplay this hand. Calling is cleaner.", zh: "加注可能打过头，跟注更稳。" }
+                },
+                nextNarration: { en: "Good defend and flop decision.", zh: "防守和翻牌决策都不错。" },
+                coachTip: { en: "Top pair in BB often calls before it raises.", zh: "BB 顶对很多时候先跟注，不急着加注。" }
+            }
+        ]
+    },
+    {
+        id: "flop-top-pair-value",
+        title: { en: "Flop Top Pair Value Bet", zh: "翻牌顶对价值下注" },
+        difficulty: { en: "Beginner", zh: "新手" },
+        summary: { en: "Learn when top pair should bet for value.", zh: "学习顶对什么时候应该价值下注。" },
+        finalSummary: {
+            en: { good: "You identified worse hands that can call.", tip: "Value betting means worse hands can pay you." },
+            zh: { good: "你找到了会跟注的更差牌。", tip: "价值下注的核心是更差的牌会付钱。" }
+        },
+        steps: [
+            {
+                street: "flop",
+                heroPosition: "CO",
+                heroCards: ["Ah", "Qh"],
+                boardCards: ["Qd", "7s", "3h"],
+                pot: 7,
+                stack: 96,
+                actionHistory: "Hero raised CO, BB called. BB checks flop.",
+                summaryText: { en: "You have A♥ Q♥ on Q♦ 7♠ 3♥. BB checks.", zh: "你拿 A♥ Q♥，公共牌 Q♦ 7♠ 3♥。BB 过牌。" },
+                availableActions: ["check", "bet"],
+                recommendedAction: "bet",
+                feedbackByAction: {
+                    check: { en: "Checking is safe but misses value from worse queens.", zh: "过牌安全，但会错过更差 Q 的价值。" },
+                    bet: { en: "Good. Top pair top kicker can bet for value.", zh: "很好。顶对顶踢脚可以价值下注。" }
+                },
+                nextNarration: { en: "BB calls. Keep thinking about value on safe turns.", zh: "BB 跟注。安全转牌继续考虑价值。" },
+                coachTip: { en: "When worse hands call, bet.", zh: "有更差的牌会跟，就下注。" },
+                seatAction: { position: "BB", label: { en: "BB checks", zh: "BB 过牌" } }
+            },
+            {
+                street: "turn",
+                heroPosition: "CO",
+                heroCards: ["Ah", "Qh"],
+                boardCards: ["Qd", "7s", "3h", "2c"],
+                pot: 15,
+                stack: 92,
+                actionHistory: "Hero bet flop, BB called. Turn 2c, BB checks.",
+                summaryText: { en: "Turn 2♣ changes little. BB checks again.", zh: "转牌 2♣ 没太大变化。BB 再次过牌。" },
+                availableActions: ["check", "bet"],
+                recommendedAction: "bet",
+                feedbackByAction: {
+                    check: { en: "Checking is okay, but there is still value.", zh: "过牌可以，但这里仍然有价值。" },
+                    bet: { en: "Good. Continue value betting on a safe turn.", zh: "很好。安全转牌继续价值下注。" }
+                },
+                nextNarration: { en: "Value line complete.", zh: "价值线完成。" },
+                coachTip: { en: "Safe turns let value hands keep betting.", zh: "安全转牌让价值牌可以继续下注。" }
+            }
+        ]
     }
 ];
 
@@ -474,6 +669,7 @@ class StackSenseiApp {
         this.selectedLessonId = LESSONS[0].id;
         this.lessonStepIndex = 0;
         this.quizState = {};
+        this.quizQuestionIndex = {};
         this.practiceState = {
             scenarioId: PRACTICE_SCENARIOS[0].id,
             stepIndex: 0,
@@ -489,6 +685,7 @@ class StackSenseiApp {
         this.applyLanguage();
         this.syncCardsFromSelectors();
         this.renderPractice();
+        this.loadBackendPracticeScenario();
     }
 
     bindElements() {
@@ -540,7 +737,7 @@ class StackSenseiApp {
     }
 
     bindEvents() {
-        this.langButton.addEventListener("click", () => this.toggleLanguage());
+        if (this.langButton) this.langButton.addEventListener("click", () => this.toggleLanguage());
         this.navButtons.forEach((button) => button.addEventListener("click", () => this.setSection(button.dataset.nav)));
         this.learningCards.addEventListener("click", (event) => {
             const card = event.target.closest("[data-lesson-id]");
@@ -601,7 +798,7 @@ class StackSenseiApp {
     applyLanguage() {
         const copy = COPY[this.language];
         document.documentElement.lang = copy.htmlLang;
-        this.langText.textContent = copy.langToggle;
+        if (this.langText) this.langText.textContent = "中 / ENG";
         document.querySelectorAll("[data-i18n]").forEach((el) => {
             const key = el.dataset.i18n;
             if (copy[key]) el.textContent = copy[key];
@@ -663,13 +860,15 @@ class StackSenseiApp {
     renderLessonDetail(animate = false) {
         const lesson = this.currentLesson();
         const step = lesson.steps[this.lessonStepIndex];
-        const quizResult = this.quizState[lesson.id];
+        const quizKey = `${lesson.id}:${this.lessonStepIndex}`;
+        const currentQuiz = this.currentQuiz(lesson, step, quizKey);
+        const quizResult = this.quizState[quizKey];
         const isComplete = this.completedLessons.has(lesson.id);
         this.lessonDetail.classList.toggle("entering", animate);
         this.lessonDetail.innerHTML = `
             <div class="lesson-heading">
                 <div>
-                    <p class="section-kicker">${this.t("step")} ${this.lessonStepIndex + 1} / ${lesson.steps.length}</p>
+                    <p class="section-kicker">STEP ${this.lessonStepIndex + 1}/${lesson.steps.length}</p>
                     <h2>${step.title[this.language]}</h2>
                 </div>
                 <span class="lesson-step-pill">${isComplete ? this.t("complete") : lesson.title[this.language]}</span>
@@ -685,16 +884,17 @@ class StackSenseiApp {
             </div>
             <div class="quiz-block">
                 <p class="section-kicker">${this.t("quizChoose")}</p>
-                <h3>${lesson.quiz.question[this.language]}</h3>
+                <h3>${currentQuiz.question[this.language]}</h3>
                 <div class="quiz-options">
-                    ${lesson.quiz.options[this.language].map((option, index) => {
+                    ${currentQuiz.options[this.language].map((option, index) => {
                         const stateClass = quizResult && quizResult.index === index ? (quizResult.correct ? "correct" : "wrong") : "";
                         return `<button class="quiz-option ${stateClass}" type="button" data-quiz-index="${index}">${option}</button>`;
                     }).join("")}
                 </div>
-                <div class="quiz-feedback">${quizResult ? (quizResult.correct ? `${this.t("correct")}: ${lesson.quiz.feedback[this.language]}` : `${this.t("tryAgain")}: ${lesson.quiz.correction[this.language]}`) : ""}</div>
+                <div class="quiz-feedback">${quizResult ? (quizResult.correct ? `${this.t("correct")}: ${currentQuiz.feedback[this.language]}` : `${this.t("tryAgain")}: ${currentQuiz.correction[this.language]}`) : ""}</div>
+                <button class="lesson-nav-button" type="button" data-lesson-action="newQuiz">${this.language === "zh" ? "换一题" : "New Question"}</button>
             </div>
-            <p><strong>${this.t("beginnerTip")}:</strong> ${lesson.takeaway[this.language]}</p>
+            <p><strong>${this.t("beginnerTip")}:</strong> ${(step.takeaway || lesson.takeaway)[this.language]}</p>
         `;
         if (animate) window.setTimeout(() => this.lessonDetail.classList.remove("entering"), 300);
     }
@@ -702,6 +902,7 @@ class StackSenseiApp {
     lessonVisualMarkup(item) {
         if (POSITIONS.includes(item)) return `<span class="playing-card empty">${item}</span>`;
         if (item === "back") return this.cardMarkup("back");
+        if (!/^(10|[2-9TJQKA])[shdc]$/i.test(item)) return `<span class="playing-card empty">${this.escapeHtml(item)}</span>`;
         return this.cardMarkup(item);
     }
 
@@ -715,6 +916,7 @@ class StackSenseiApp {
             if (action === "next") this.lessonStepIndex = Math.min(lesson.steps.length - 1, this.lessonStepIndex + 1);
             if (action === "complete") this.markLessonComplete(lesson.id);
             if (action === "ask") this.askLessonCoach(lesson);
+            if (action === "newQuiz") this.newQuizQuestion(lesson.id);
             if (action !== "ask") this.renderLessonDetail(true);
         }
         if (quizButton) this.answerQuiz(Number.parseInt(quizButton.dataset.quizIndex, 10));
@@ -722,8 +924,58 @@ class StackSenseiApp {
 
     answerQuiz(index) {
         const lesson = this.currentLesson();
-        this.quizState[lesson.id] = { index, correct: index === lesson.quiz.correctIndex };
+        const step = lesson.steps[this.lessonStepIndex];
+        const quizKey = `${lesson.id}:${this.lessonStepIndex}`;
+        const currentQuiz = this.currentQuiz(lesson, step, quizKey);
+        this.quizState[quizKey] = { index, correct: index === currentQuiz.correctAnswer };
         this.renderLessonDetail();
+    }
+
+    currentQuiz(lesson, step, quizKey) {
+        if (!step.quizPool) {
+            step.quizPool = [
+                {
+                    question: step.quizQuestion,
+                    options: step.quizOptions,
+                    correctAnswer: step.correctAnswer,
+                    feedback: step.feedback,
+                    correction: step.correction
+                },
+                {
+                    question: {
+                        en: `Quick check: ${lesson.title.en}`,
+                        zh: `快速检查：${lesson.title.zh}`
+                    },
+                    options: {
+                        en: ["Have a clear reason", "Click any button", "Ignore position"],
+                        zh: ["要有清楚理由", "随便点一个", "忽略位置"]
+                    },
+                    correctAnswer: 0,
+                    feedback: {
+                        en: "Right. Beginner poker improves when every action has a reason.",
+                        zh: "对。新手进步的关键，是每个行动都有理由。"
+                    },
+                    correction: {
+                        en: "Try to choose the answer that creates a clear poker reason.",
+                        zh: "再想想，选择那个能形成清楚扑克理由的答案。"
+                    }
+                }
+            ];
+        }
+        if (typeof this.quizQuestionIndex[quizKey] !== "number") {
+            this.quizQuestionIndex[quizKey] = Math.floor(Math.random() * step.quizPool.length);
+        }
+        return step.quizPool[this.quizQuestionIndex[quizKey]];
+    }
+
+    newQuizQuestion(lessonId) {
+        const lesson = this.currentLesson();
+        const step = lesson.steps[this.lessonStepIndex];
+        const quizKey = `${lessonId}:${this.lessonStepIndex}`;
+        const current = this.quizQuestionIndex[quizKey] || 0;
+        const total = step.quizPool?.length || 2;
+        this.quizQuestionIndex[quizKey] = (current + 1) % total;
+        this.quizState[quizKey] = null;
     }
 
     markLessonComplete(lessonId) {
@@ -837,6 +1089,64 @@ class StackSenseiApp {
         return scenario.steps[this.practiceState.stepIndex] || scenario.steps[0];
     }
 
+    async loadBackendPracticeScenario() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/practice/scenario?language=${encodeURIComponent(this.language)}`);
+            if (!response.ok) return;
+            const data = await response.json();
+            const scenario = this.scenarioFromApi(data);
+            if (!scenario) return;
+            const existingIndex = PRACTICE_SCENARIOS.findIndex((item) => item.id === scenario.id);
+            if (existingIndex >= 0) {
+                PRACTICE_SCENARIOS[existingIndex] = scenario;
+            } else {
+                PRACTICE_SCENARIOS.unshift(scenario);
+            }
+            this.practiceState.scenarioId = scenario.id;
+            this.practiceState.stepIndex = 0;
+            this.renderScenarioOptions();
+            this.renderPractice();
+        } catch (error) {
+            // Local scripted scenarios remain the fallback when practice APIs are unavailable.
+        }
+    }
+
+    scenarioFromApi(data) {
+        if (!data || !data.scenarioId) return null;
+        const step = this.stepFromApi(data);
+        return {
+            id: data.scenarioId,
+            title: { en: data.scenarioTitle || "Practice Scenario", zh: data.scenarioTitle || "练习场景" },
+            difficulty: { en: data.difficulty || "beginner", zh: data.difficulty || "新手" },
+            summary: { en: data.summaryText || "", zh: data.summaryText || "" },
+            finalSummary: {
+                en: { good: "You completed the guided hand.", tip: data.beginnerTip || "" },
+                zh: { good: "你完成了这一手练习。", tip: data.beginnerTip || "" }
+            },
+            steps: [step]
+        };
+    }
+
+    stepFromApi(data) {
+        const cardsFromText = (value) => String(value || "").trim().split(/\s+/).filter(Boolean);
+        return {
+            street: data.street || "preflop",
+            heroPosition: data.heroPosition || "BTN",
+            heroCards: cardsFromText(data.heroCards),
+            boardCards: cardsFromText(data.boardCards),
+            pot: Number(data.pot) || 0,
+            stack: Number(data.stack) || 100,
+            actionHistory: data.actionHistory || "",
+            summaryText: { en: data.summaryText || "", zh: data.summaryText || "" },
+            availableActions: (data.availableActions || []).map((action) => typeof action === "string" ? action : action.id).filter(Boolean),
+            actionLabels: data.availableActions || [],
+            recommendedAction: data.recommendedAction || "",
+            feedbackByAction: {},
+            nextNarration: { en: "", zh: "" },
+            coachTip: { en: data.beginnerTip || "", zh: data.beginnerTip || "" }
+        };
+    }
+
     resetPractice(scenarioId = this.practiceState.scenarioId) {
         this.practiceState = { scenarioId, stepIndex: 0, selectedAction: "", feedbackVisible: false, isComplete: false, started: false };
         this.renderPractice();
@@ -858,6 +1168,7 @@ class StackSenseiApp {
         this.practiceState.stepIndex += 1;
         this.practiceState.selectedAction = "";
         this.practiceState.feedbackVisible = false;
+        this.practiceState.apiFeedback = null;
         this.renderPractice({ deal: true, boardFlip: true });
         const step = this.currentStep();
         if (step.seatAction) window.setTimeout(() => this.animateSeatAction(step.seatAction.position, step.seatAction.label[this.language]), 500);
@@ -870,7 +1181,7 @@ class StackSenseiApp {
         this.practiceDifficulty.textContent = scenario.difficulty[this.language];
         this.scenarioSummary.textContent = this.practiceState.isComplete ? this.t("scenarioComplete") : step.summaryText[this.language];
         this.practiceMeta.innerHTML = `
-            <span class="meta-pill">${COPY[this.language].street[step.street]}</span>
+            <span class="meta-pill">${this.streetLabel(step.street)}</span>
             <span class="meta-pill">${this.t("potPrefix")}: ${step.pot} BB</span>
             <span class="meta-pill">${this.t("step")} ${this.practiceState.stepIndex + 1} / ${scenario.steps.length}</span>
         `;
@@ -908,18 +1219,54 @@ class StackSenseiApp {
         this.practiceActions.innerHTML = step.availableActions.map((action) => {
             const selected = this.practiceState.selectedAction === action ? "action-selected" : "";
             const tone = action === step.recommendedAction ? "primary" : action === "fold" ? "danger" : "";
-            return `<button class="action-button ${tone} ${selected}" type="button" data-action="${action}" ${this.practiceState.feedbackVisible ? "disabled" : ""}>${COPY[this.language].actions[action]}</button>`;
+            return `<button class="action-button ${tone} ${selected}" type="button" data-action="${action}" ${this.practiceState.feedbackVisible ? "disabled" : ""}>${this.actionLabel(step, action)}</button>`;
         }).join("");
     }
 
-    handlePracticeAction(action, button) {
+    actionLabel(step, action) {
+        const apiAction = (step.actionLabels || []).find((item) => item.id === action);
+        const base = apiAction?.label || COPY[this.language].actions[action] || action;
+        return apiAction?.amount ? `${base} ${apiAction.amount} BB` : base;
+    }
+
+    async handlePracticeAction(action, button) {
         if (!this.practiceState.started || this.practiceState.feedbackVisible) return;
         button.classList.add("clicked");
         window.setTimeout(() => button.classList.remove("clicked"), 280);
         this.practiceState.selectedAction = action;
         this.practiceState.feedbackVisible = true;
+        const apiHandled = await this.submitPracticeAction(action);
+        if (apiHandled) return;
         this.renderPractice();
         this.animateSeatAction(this.currentStep().heroPosition, `${this.t("yourChoice")}: ${COPY[this.language].actions[action]}`);
+    }
+
+    async submitPracticeAction(action) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/practice/action`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    scenarioId: this.practiceState.scenarioId,
+                    stepIndex: this.practiceState.stepIndex,
+                    userAction: action,
+                    language: this.language
+                })
+            });
+            if (!response.ok) return false;
+            const data = await response.json();
+            this.practiceState.apiFeedback = data.feedback || null;
+            if (data.nextState) {
+                const scenario = this.currentScenario();
+                scenario.steps[this.practiceState.stepIndex + 1] = this.stepFromApi(data.nextState);
+            }
+            this.practiceState.isComplete = Boolean(data.isComplete);
+            this.renderPractice();
+            this.animateSeatAction(this.currentStep().heroPosition, `${this.t("yourChoice")}: ${COPY[this.language].actions[action] || action}`);
+            return true;
+        } catch (error) {
+            return false;
+        }
     }
 
     renderPracticeFeedback() {
@@ -935,6 +1282,21 @@ class StackSenseiApp {
         }
         if (!this.practiceState.started) {
             this.practiceFeedback.innerHTML = `<p>${this.t("stepIntro")}</p>`;
+            return;
+        }
+        if (this.practiceState.feedbackVisible && this.practiceState.apiFeedback) {
+            const feedback = this.practiceState.apiFeedback;
+            this.practiceFeedback.innerHTML = `
+                <div class="feedback-card ${feedback.isReasonable ? "good" : "caution"}">
+                    <strong>${this.t("yourChoice")}:</strong> ${this.escapeHtml(feedback.yourChoice || this.practiceState.selectedAction)}<br>
+                    <strong>${this.t("coachSuggestion")}:</strong> ${this.escapeHtml(feedback.coachSuggestion || "")}
+                </div>
+                <div class="feedback-card">
+                    <strong>Why:</strong><br>${this.escapeHtml(feedback.why || "")}<br>
+                    <strong>${this.t("beginnerTip")}:</strong> ${this.escapeHtml(feedback.beginnerTip || "")}
+                </div>
+                <p>${this.escapeHtml(feedback.nextStep || "")}</p>
+            `;
             return;
         }
         if (!this.practiceState.feedbackVisible) {
@@ -963,7 +1325,7 @@ class StackSenseiApp {
         const activeIndex = STREET_ORDER.indexOf(activeStreet);
         this.streetProgress.innerHTML = STREET_ORDER.map((street, index) => {
             const state = index < activeIndex ? "done" : index === activeIndex ? "active" : "";
-            return `<div class="street-step ${state}">${COPY[this.language].street[street]}</div>`;
+            return `<div class="street-step ${state}">${this.streetLabel(street)}</div>`;
         }).join("");
     }
 
@@ -1045,9 +1407,15 @@ class StackSenseiApp {
             ${compact ? "" : '<div class="deck-stack" aria-hidden="true"></div>'}
             <div class="pot-badge">${this.t("potPrefix")}: ${pot}</div>
             <div class="board-zone">${board.map((card, index) => this.cardMarkup(card, boardFlip, index * 110, card ? "card-flip" : "")).join("")}</div>
-            <div class="street-badge">${COPY[this.language].street[street]}</div>
+            <div class="street-badge">${this.streetLabel(street)}</div>
             ${seats}
         `;
+    }
+
+    streetLabel(street) {
+        if (COPY[this.language].street[street]) return COPY[this.language].street[street];
+        if (street === "showdown") return this.language === "zh" ? "摊牌" : "Showdown";
+        return street;
     }
 
     cardMarkup(card, animated = false, delay = 0, animationClass = "card-deal") {
@@ -1055,7 +1423,15 @@ class StackSenseiApp {
         const cls = animated && !REDUCED_MOTION ? animationClass : "";
         if (card === "back") return `<span class="playing-card back ${cls}"${delayStyle}>##</span>`;
         if (!card) return `<span class="playing-card empty">--</span>`;
-        return `<span class="playing-card ${this.isRedCard(card) ? "red" : ""} ${cls}"${delayStyle}>${this.displayCard(card)}</span>`;
+        const rank = card.slice(0, -1).replace("T", "10");
+        const suit = SUITS.find((item) => item.value === card.slice(-1).toLowerCase())?.symbol || card.slice(-1);
+        return `
+            <span class="playing-card face ${this.isRedCard(card) ? "red" : ""} ${cls}"${delayStyle}>
+                <span class="card-corner top">${rank}<small>${suit}</small></span>
+                <span class="card-pip">${suit}</span>
+                <span class="card-corner bottom">${rank}<small>${suit}</small></span>
+            </span>
+        `;
     }
 
     animatePotUpdate() {
