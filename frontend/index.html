@@ -3,169 +3,201 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StackSensei - Texas Hold'em Mentor</title>
+    <title>StackSensei - Poker Learning Coach</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="app-shell">
-        <header class="brand-header">
-            <div class="brand-mark" aria-hidden="true">♠</div>
-            <div class="brand-copy">
-                <p class="eyebrow" id="kicker">Texas Hold'em Mentor</p>
-                <h1>StackSensei</h1>
-                <p class="subtitle" id="subtitle-en">A card-table coach that chats, teaches, and reviews your hands.</p>
-                <p class="subtitle zh-subtitle" id="subtitle-zh">会聊天、会讲牌，也会拆解牌局的牌桌教练。</p>
-            </div>
-            <button id="lang-toggle-btn" class="icon-button" type="button" title="Switch language">中文</button>
+        <header class="topbar">
+            <button class="brand-button" type="button" data-nav="learn" aria-label="StackSensei home">
+                <img src="assets/joker-avatar.png" alt="" class="brand-avatar">
+                <span class="brand-wordmark">StackSensei</span>
+            </button>
+
+            <nav class="main-nav" aria-label="Main navigation">
+                <button class="nav-tab active" type="button" data-nav="learn">
+                    <span aria-hidden="true">📖</span>
+                    <span data-i18n="navLearn">Learn</span>
+                </button>
+                <button class="nav-tab" type="button" data-nav="practice">
+                    <span aria-hidden="true">⚔</span>
+                    <span data-i18n="navPractice">Practice</span>
+                </button>
+                <button class="nav-tab" type="button" data-nav="analyze">
+                    <span aria-hidden="true">📈</span>
+                    <span data-i18n="navAnalyze">Analyze</span>
+                </button>
+            </nav>
+
+            <button id="lang-toggle-btn" class="language-toggle" type="button" aria-label="Switch language">
+                <span aria-hidden="true">◎</span>
+                <span id="lang-toggle-text">中文</span>
+            </button>
         </header>
 
-        <main class="workspace">
-            <div class="left-dashboard">
-                <section class="table-panel" aria-labelledby="table-title">
-                    <div class="panel-heading">
-                        <h2 id="table-title">Table View</h2>
-                        <div class="hand-summary" id="hand-summary">-- / --</div>
-                    </div>
-                    <div class="poker-table" id="poker-table" aria-live="polite">
-                        <div class="community-row" id="table-community-cards"></div>
-                        <div class="seat seat-utg" data-position="UTG">
-                            <span class="seat-label">UTG</span>
-                            <div class="seat-cards"></div>
-                        </div>
-                        <div class="seat seat-hj" data-position="HJ">
-                            <span class="seat-label">HJ</span>
-                            <div class="seat-cards"></div>
-                        </div>
-                        <div class="seat seat-co" data-position="CO">
-                            <span class="seat-label">CO</span>
-                            <div class="seat-cards"></div>
-                        </div>
-                        <div class="seat seat-btn" data-position="BTN">
-                            <span class="seat-label">BTN</span>
-                            <div class="seat-cards"></div>
-                        </div>
-                        <div class="seat seat-sb" data-position="SB">
-                            <span class="seat-label">SB</span>
-                            <div class="seat-cards"></div>
-                        </div>
-                        <div class="seat seat-bb" data-position="BB">
-                            <span class="seat-label">BB</span>
-                            <div class="seat-cards"></div>
+        <main class="app-main">
+            <section id="learn-section" class="app-section active" data-section="learn" aria-labelledby="learn-title">
+                <div class="learn-grid">
+                    <div class="learn-copy">
+                        <p class="section-kicker" data-i18n="learnKicker">Beginner path</p>
+                        <h1 id="learn-title" data-i18n="learnTitle">Learn Texas Hold'em from Zero</h1>
+                        <p class="section-lede" data-i18n="learnSubtitle">Understand the rules, actions, and flow of a hand in simple language.</p>
+
+                        <div class="learning-cards" id="learning-cards"></div>
+
+                        <div class="simple-progress" aria-label="Learning progress">
+                            <div class="progress-head">
+                                <span data-i18n="todayPath">Today&apos;s path</span>
+                                <strong>1 / 4</strong>
+                            </div>
+                            <div class="progress-track">
+                                <span></span>
+                            </div>
                         </div>
                     </div>
-                </section>
 
-                <section class="game-panel" aria-labelledby="game-title">
-                    <div class="panel-heading">
-                        <h2 id="game-title">Game Setup</h2>
-                    </div>
-                    <div class="panel-content">
-                        <div class="card-section">
-                            <div class="section-label" id="hand-cards-label">Hero Cards</div>
-                            <div class="card-grid hole-grid" id="hole-card-selectors"></div>
+                    <section class="coach-panel learn-chat" aria-labelledby="learn-chat-title">
+                        <div class="panel-title-row">
+                            <div>
+                                <p class="section-kicker" data-i18n="coachKicker">StackSensei</p>
+                                <h2 id="learn-chat-title" data-i18n="learnChatTitle">Chat with Coach</h2>
+                            </div>
+                            <img src="assets/joker-avatar.png" alt="" class="panel-avatar">
                         </div>
-
-                        <div class="card-section">
-                            <div class="section-label" id="community-cards-label">Board Cards</div>
-                            <div class="card-grid board-grid" id="community-card-selectors"></div>
-                        </div>
-
-                        <div class="card-warning" id="card-warning" aria-live="polite"></div>
-
-                        <div class="context-grid" aria-labelledby="table-context-label">
-                            <div class="section-label full-row" id="table-context-label">Table Context</div>
-                            <label class="input-group" for="chips">
-                                <span id="chips-label">Stack</span>
-                                <input type="number" id="chips" placeholder="100" min="1" value="100">
-                            </label>
-
-                            <label class="input-group" for="pot">
-                                <span id="pot-label">Pot</span>
-                                <input type="number" id="pot" placeholder="0" min="0" value="0">
-                            </label>
-
-                            <label class="input-group" for="position">
-                                <span id="position-label">Position</span>
-                                <select id="position">
-                                    <option value="unknown">Unknown</option>
-                                    <option value="UTG">UTG</option>
-                                    <option value="HJ">HJ</option>
-                                    <option value="CO">CO</option>
-                                    <option value="BTN">BTN</option>
-                                    <option value="SB">SB</option>
-                                    <option value="BB">BB</option>
-                                </select>
-                            </label>
-
-                            <label class="input-group" for="players">
-                                <span id="players-label">Players</span>
-                                <select id="players">
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                    <option value="5">5</option>
-                                    <option value="6" selected>6</option>
-                                    <option value="7">7</option>
-                                    <option value="8">8</option>
-                                    <option value="9">9</option>
-                                </select>
-                            </label>
-                        </div>
-
-                        <details class="action-details">
-                            <summary id="action-history-label">Action History</summary>
-                            <textarea id="action-history" rows="3" maxlength="1000" placeholder="e.g. UTG folds, HJ raises to 2.5BB, BTN calls..."></textarea>
-                        </details>
-
-                        <input type="hidden" id="hand-cards">
-                        <input type="hidden" id="community-cards">
-
-                        <button id="update-game-btn" class="btn-primary" type="button">Use This Hand</button>
-                    </div>
-                </section>
-            </div>
-
-            <section class="chat-container" aria-label="Poker chat">
-                <div class="chat-header">
-                    <div>
-                        <h2 id="chat-title">Coach Chat</h2>
-                        <p id="chat-subtitle">Ask for a decision, a concept, or a full hand review.</p>
-                    </div>
-                    <div class="status-pill" id="state-pill">Ready</div>
+                        <div class="chat-messages" id="learn-messages" aria-live="polite"></div>
+                        <div class="quick-prompts" id="learn-prompts"></div>
+                        <form class="chat-form" id="learn-form">
+                            <input type="text" id="learn-input" autocomplete="off" data-i18n-placeholder="learnInput" placeholder="Ask about rules, actions, or poker basics...">
+                            <button class="send-button" type="submit" aria-label="Send">➤</button>
+                        </form>
+                        <p class="tiny-note" data-i18n="coachNote">StackSensei can be wrong. Think carefully and use judgment.</p>
+                    </section>
                 </div>
+            </section>
 
-                <div class="chat-messages" id="chat-messages">
-                    <article class="message bot-message">
-                        <img src="assets/joker-avatar.png" alt="StackSensei avatar" class="bot-avatar">
-                        <div class="message-content" id="welcome-message">
-                            <p>Hello, I am StackSensei. Share your spot and I will give a practical poker learning recommendation.</p>
+            <section id="practice-section" class="app-section" data-section="practice" aria-labelledby="practice-title">
+                <div class="practice-grid">
+                    <section class="practice-table-wrap" aria-label="Practice poker table">
+                        <div class="scenario-toolbar">
+                            <label class="scenario-select-label" for="scenario-select">
+                                <span data-i18n="scenarioLabel">Scenario</span>
+                                <select id="scenario-select"></select>
+                            </label>
+                            <button class="ghost-icon-button" id="next-scenario-btn" type="button" aria-label="Next scenario">↻</button>
                         </div>
-                    </article>
-                </div>
+                        <div class="table-stage large-table" id="practice-table"></div>
+                        <div class="turn-pill">
+                            <span class="gold-dot"></span>
+                            <span id="practice-turn-label">Your turn</span>
+                        </div>
+                    </section>
 
-                <div class="quick-questions" id="quick-questions">
-                    <button type="button" class="quick-question-btn">What should I do next?</button>
-                    <button type="button" class="quick-question-btn">Should I call?</button>
-                    <button type="button" class="quick-question-btn">Should I raise?</button>
-                    <button type="button" class="quick-question-btn">Should I fold?</button>
-                    <button type="button" class="quick-question-btn">What are the pot odds?</button>
-                    <button type="button" class="quick-question-btn">Analyze this hand</button>
-                </div>
+                    <aside class="practice-side">
+                        <section class="glass-panel action-panel" aria-labelledby="practice-title">
+                            <p class="section-kicker" id="practice-street">Preflop</p>
+                            <h2 id="practice-title" data-i18n="practiceTitle">Practice This Hand</h2>
+                            <p class="scenario-summary" id="scenario-summary"></p>
+                            <div class="action-buttons" id="practice-actions"></div>
+                        </section>
 
-                <form class="input-wrapper" id="chat-form">
-                    <div class="text-input-row">
-                        <input type="text" id="user-input" placeholder="Ask a poker question..." autocomplete="off">
-                        <button id="send-btn" class="send-btn" type="submit">Send</button>
-                    </div>
-                    <div class="input-tools">
-                        <button id="voice-btn" class="tool-button" type="button" title="Voice input">Mic</button>
-                        <button id="read-aloud-btn" class="tool-button" type="button" title="Read last response">Read</button>
-                        <div id="voice-status" class="voice-status" aria-live="polite"></div>
-                    </div>
-                </form>
+                        <section class="glass-panel explanation-panel" aria-labelledby="coach-says-title">
+                            <div class="coach-says-head">
+                                <img src="assets/joker-avatar.png" alt="" class="mini-avatar">
+                                <h3 id="coach-says-title" data-i18n="coachSays">Coach Says</h3>
+                            </div>
+                            <div id="practice-feedback" class="practice-feedback"></div>
+                        </section>
+
+                        <section class="street-progress" aria-label="Street progress" id="street-progress"></section>
+                    </aside>
+                </div>
+            </section>
+
+            <section id="analyze-section" class="app-section" data-section="analyze" aria-labelledby="analyze-title">
+                <div class="analyze-grid">
+                    <aside class="analyze-left">
+                        <section class="glass-panel compact-visualizer" aria-labelledby="table-state-title">
+                            <div class="panel-title-row tight">
+                                <h2 id="table-state-title" data-i18n="tableState">Table State</h2>
+                                <span class="info-dot">i</span>
+                            </div>
+                            <div class="table-stage mini-table" id="analyze-table"></div>
+                            <div class="card-warning" id="card-warning" aria-live="polite"></div>
+                        </section>
+
+                        <section class="glass-panel setup-panel" aria-labelledby="setup-title">
+                            <h2 id="setup-title" data-i18n="gameSetup">Game Setup</h2>
+                            <div class="setup-content">
+                                <div class="selector-section">
+                                    <div class="field-label" data-i18n="heroCards">Hero Cards</div>
+                                    <div class="card-grid hole-grid" id="hole-card-selectors"></div>
+                                </div>
+
+                                <div class="selector-section">
+                                    <div class="field-label" data-i18n="boardCards">Board Cards</div>
+                                    <div class="card-grid board-grid" id="community-card-selectors"></div>
+                                </div>
+
+                                <div class="context-grid">
+                                    <label class="input-group" for="position">
+                                        <span data-i18n="position">Position</span>
+                                        <select id="position"></select>
+                                    </label>
+                                    <label class="input-group" for="chips">
+                                        <span data-i18n="stack">Stack</span>
+                                        <input type="number" id="chips" min="1" value="100">
+                                    </label>
+                                    <label class="input-group" for="pot">
+                                        <span data-i18n="pot">Pot</span>
+                                        <input type="number" id="pot" min="0" value="0">
+                                    </label>
+                                    <label class="input-group" for="players">
+                                        <span data-i18n="players">Players</span>
+                                        <select id="players">
+                                            <option value="2">2</option>
+                                            <option value="3">3</option>
+                                            <option value="4">4</option>
+                                            <option value="5">5</option>
+                                            <option value="6" selected>6</option>
+                                            <option value="7">7</option>
+                                            <option value="8">8</option>
+                                            <option value="9">9</option>
+                                        </select>
+                                    </label>
+                                </div>
+
+                                <label class="input-group full" for="action-history">
+                                    <span data-i18n="actionHistory">Action History</span>
+                                    <textarea id="action-history" rows="3" maxlength="1000" data-i18n-placeholder="actionPlaceholder" placeholder="UTG folds, HJ raises to 2.5BB..."></textarea>
+                                </label>
+
+                                <input type="hidden" id="hand-cards">
+                                <input type="hidden" id="community-cards">
+                                <button id="update-game-btn" class="primary-button" type="button" data-i18n="useHand">Use This Hand</button>
+                            </div>
+                        </section>
+                    </aside>
+
+                    <section class="coach-panel analyze-chat" aria-labelledby="analyze-title">
+                        <div class="panel-title-row">
+                            <div>
+                                <p class="section-kicker" data-i18n="coachKicker">StackSensei</p>
+                                <h2 id="analyze-title" data-i18n="analyzeTitle">Review This Hand with Coach</h2>
+                            </div>
+                            <span class="status-pill" id="state-pill">Ready</span>
+                        </div>
+                        <div class="chat-messages" id="analyze-messages" aria-live="polite"></div>
+                        <div class="quick-prompts" id="analyze-prompts"></div>
+                        <form class="chat-form" id="analyze-form">
+                            <input type="text" id="analyze-input" autocomplete="off" data-i18n-placeholder="analyzeInput" placeholder="Ask about this hand...">
+                            <button class="send-button" id="send-btn" type="submit" aria-label="Send">➤</button>
+                        </form>
+                        <p class="tiny-note" data-i18n="coachNote">StackSensei can be wrong. Think carefully and use judgment.</p>
+                    </section>
+                </div>
             </section>
         </main>
     </div>
