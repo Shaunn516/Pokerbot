@@ -36,11 +36,23 @@
 
         <main class="app-main">
             <section id="learn-section" class="app-section active" data-section="learn" aria-labelledby="learn-title">
-                <div class="learn-grid">
+                <div class="learn-grid home-only" id="learn-grid">
                     <div class="learn-copy">
-                        <p class="section-kicker" data-i18n="learnKicker">Beginner path</p>
-                        <h1 id="learn-title" data-i18n="learnTitle">Learn Texas Hold'em from Zero</h1>
-                        <p class="section-lede" data-i18n="learnSubtitle">Understand the rules, actions, and flow of a hand in simple language.</p>
+                        <section class="learn-hero" aria-labelledby="learn-title">
+                            <div class="learn-hero-copy">
+                                <h1 id="learn-title">StackSensei</h1>
+                                <p class="home-slogan" data-i18n="homeSlogan">Luck deals the cards. Skill plays the hand.</p>
+                                <div class="hero-actions">
+                                    <button class="primary-button" type="button" data-hero-action="start" data-i18n="navLearn">Learn</button>
+                                    <button class="ghost-button" type="button" data-hero-action="practice" data-i18n="navPractice">Practice</button>
+                                    <button class="ghost-button" type="button" data-hero-action="review" data-i18n="navAnalyze">Analyze</button>
+                                </div>
+                            </div>
+                            <figure class="learn-hero-visual">
+                                <span class="hero-glow" aria-hidden="true"></span>
+                                <img src="assets/brand/jester-dealer.png" alt="StackSensei jester dealer coach" onerror="this.src='assets/joker-avatar.png'">
+                            </figure>
+                        </section>
 
                         <div class="learning-cards" id="learning-cards"></div>
 
@@ -56,6 +68,18 @@
 
                         <section class="lesson-detail glass-panel" id="lesson-detail" aria-live="polite"></section>
                     </div>
+
+                    <aside class="learn-side">
+                    <section class="glass-panel daily-hand" aria-labelledby="daily-hand-title">
+                        <div class="panel-title-row tight">
+                            <div>
+                                <p class="section-kicker" data-i18n="dailyKicker">Daily drill</p>
+                                <h2 id="daily-hand-title" data-i18n="dailyHand">Daily Hand</h2>
+                            </div>
+                            <span class="streak-pill" id="daily-streak">0</span>
+                        </div>
+                        <div id="daily-hand-content"></div>
+                    </section>
 
                     <section class="coach-panel learn-chat" aria-labelledby="learn-chat-title">
                         <div class="panel-title-row">
@@ -73,6 +97,7 @@
                         </form>
                         <p class="tiny-note" data-i18n="coachNote">StackSensei can be wrong. Think carefully and use judgment.</p>
                     </section>
+                    </aside>
                 </div>
             </section>
 
@@ -195,18 +220,62 @@
                         </div>
                         <div class="chat-messages" id="analyze-messages" aria-live="polite"></div>
                         <div class="quick-prompts" id="analyze-prompts"></div>
+                        <div class="analysis-actions" id="analysis-actions" hidden>
+                            <button class="primary-button" id="save-review-btn" type="button" data-i18n="saveReview">Save to Review Log</button>
+                            <button class="ghost-button" id="share-current-btn" type="button" data-i18n="shareHand">Share Hand</button>
+                        </div>
                         <form class="chat-form" id="analyze-form">
                             <input type="text" id="analyze-input" autocomplete="off" data-i18n-placeholder="analyzeInput" placeholder="Ask about this hand...">
                             <button class="send-button" id="send-btn" type="submit" aria-label="Send">Send</button>
                         </form>
                         <p class="tiny-note" data-i18n="coachNote">StackSensei can be wrong. Think carefully and use judgment.</p>
                     </section>
+
+                    <aside class="review-log-panel glass-panel" aria-labelledby="review-log-title">
+                        <div class="review-log-head">
+                            <div>
+                                <p class="section-kicker" data-i18n="reviewKicker">Study notebook</p>
+                                <h2 id="review-log-title" data-i18n="reviewLog">Review Log</h2>
+                            </div>
+                            <button class="ghost-icon-button" id="export-log-btn" type="button" data-i18n="exportJson">Export</button>
+                        </div>
+                        <div class="review-help">
+                            <strong data-i18n="whatReviewLog">What is Review Log?</strong>
+                            <p data-i18n="reviewHelp">Save important analyzed hands here. You can revisit them later, add notes, and generate a shareable hand card.</p>
+                        </div>
+                        <p class="tiny-note review-notice" data-i18n="reviewNotice">Your review log is stored in this browser. Export it anytime if you want a backup.</p>
+                        <div class="review-tools">
+                            <select id="review-filter" aria-label="Filter review log"></select>
+                            <button class="ghost-icon-button" id="import-log-btn" type="button" data-i18n="importJson">Import</button>
+                            <button class="ghost-icon-button danger-lite" id="clear-log-btn" type="button" data-i18n="clearAll">Clear</button>
+                            <input id="import-log-file" type="file" accept="application/json" hidden>
+                        </div>
+                        <div class="review-log-list" id="review-log-list"></div>
+                        <div class="review-log-detail" id="review-log-detail"></div>
+                    </aside>
                 </div>
             </section>
         </main>
+
+        <div class="share-modal" id="share-modal" hidden>
+            <div class="share-dialog glass-panel" role="dialog" aria-modal="true" aria-labelledby="share-title">
+                <div class="review-log-head">
+                    <h2 id="share-title" data-i18n="shareHand">Share Hand</h2>
+                    <button class="ghost-icon-button" id="close-share-btn" type="button">×</button>
+                </div>
+                <div class="share-preview-wrap">
+                    <div id="share-card" class="share-card-template"></div>
+                </div>
+                <div class="lesson-actions">
+                    <button class="primary-button" id="download-share-btn" type="button" data-i18n="downloadPng">Download PNG</button>
+                    <button class="ghost-button" id="copy-share-btn" type="button" data-i18n="copyImage">Copy Image</button>
+                </div>
+                <p class="tiny-note" id="share-status"></p>
+            </div>
+        </div>
     </div>
 
     <script src="config.js"></script>
-    <script src="app.js"></script>
+    <script src="app-redesign.js"></script>
 </body>
 </html>
