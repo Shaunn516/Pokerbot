@@ -149,6 +149,17 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     action: str
     reply: str
+    intent: Optional[str] = None
+    mode: Optional[str] = None
+    language: Optional[Language] = None
+    summary: Optional[dict[str, Any]] = None
+    reasoningBullets: list[str] = Field(default_factory=list)
+    riskBullets: list[str] = Field(default_factory=list)
+    beginnerNote: Optional[str] = None
+    tags: list[str] = Field(default_factory=list)
+    leakTypes: list[str] = Field(default_factory=list)
+    shareSummary: Optional[dict[str, Any]] = None
+    coachReply: Optional[str] = None
 
 
 class PracticeStepState(BaseModel):
