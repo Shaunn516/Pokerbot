@@ -1301,10 +1301,26 @@ class StackSenseiApp {
     }
 
     localPracticeScenarios() {
-        const makeStep = (packId, handId, title, street, heroPosition, heroCards, boardCards, pot, actionHistory, prompt, availableActions, recommendedAction, coachExplanation, beginnerTip, tags = []) => ({
+        const actions = {
+            preflop: [
+                { id: "fold", label: { en: "Fold", zh: "弃牌" } },
+                { id: "call", label: { en: "Call", zh: "跟注" } },
+                { id: "raise", label: { en: "Raise", zh: "加注" } }
+            ],
+            postflop: [
+                { id: "check", label: { en: "Check", zh: "过牌" } },
+                { id: "bet", label: { en: "Bet", zh: "下注" } }
+            ],
+            river: [
+                { id: "fold", label: { en: "Fold", zh: "弃牌" } },
+                { id: "call", label: { en: "Call", zh: "跟注" } },
+                { id: "raise", label: { en: "Raise", zh: "加注" } }
+            ]
+        };
+        const step = (packId, handId, title, street, heroPosition, heroCards, boardCards, pot, actionHistory, prompt, availableActions, recommendedAction, coachExplanation, beginnerTip, tags = []) => ({
             handId,
             packId,
-            title: { en: title, zh: title },
+            title,
             street,
             heroPosition,
             heroCards: this.splitCards(heroCards),
@@ -1313,63 +1329,61 @@ class StackSenseiApp {
             stack: 100,
             players: street === "preflop" ? 6 : 2,
             actionHistory,
-            summaryText: { en: prompt, zh: prompt },
-            availableActions: availableActions.map((action) => typeof action === "string" ? { id: action, label: COPY.en.actions[action] || action } : action),
+            summaryText: prompt,
+            availableActions,
             recommendedAction,
-            coachTip: { en: beginnerTip, zh: beginnerTip },
-            coachExplanation: { en: coachExplanation, zh: coachExplanation },
+            coachTip: beginnerTip,
+            coachExplanation,
             feedbackByAction: {},
-            nextNarration: { en: coachExplanation, zh: coachExplanation },
+            nextNarration: coachExplanation,
             tags
         });
-        const pack = (id, title, summary, steps) => ({
-            id,
-            title: { en: title, zh: title },
+        const pack = (position, title, summary, steps) => ({
+            id: position.toLowerCase() + "_position",
+            title,
             difficulty: { en: "Beginner", zh: "新手" },
             finalSummary: {
-                en: { good: title + " complete. You played " + steps.length + " hands with clear beginner logic.", tip: "Restart this pack or move to Analyze when you want a deeper review." },
-                zh: { good: title + " complete. You played " + steps.length + " hands with clear beginner logic.", tip: "Restart this pack or move to Analyze when you want a deeper review." }
+                en: { good: title.en + " complete. You practiced " + steps.length + " " + position + " spots.", tip: "Restart this position pack or try another seat." },
+                zh: { good: title.zh + "完成。你练习了 " + steps.length + " 个 " + position + " 场景。", tip: "可以重新练习这个位置，或换一个座位继续。" }
             },
             steps
         });
         return [
-            pack("preflop_basics", "Preflop Basics", "Open, fold, defend, and handle pressure before the flop.", [
-                makeStep("preflop_basics", "preflop_001", "BTN AKo Open Raise", "preflop", "BTN", "As Kh", "", 1.5, "UTG folds, HJ folds, CO folds. Action is on Hero.", "You are on the button with AKo. Everyone folds to you. What should you do?", [{ id: "fold", label: "Fold" }, { id: "call", label: "Call" }, { id: "raise", label: "Raise to 2.5BB" }], "raise", "AKo is a premium hand and BTN is the best position. Raising builds value and pressures the blinds.", "Strong hands in late position usually want to raise first in.", ["preflop", "position", "open-raise"]),
-                makeStep("preflop_basics", "preflop_002", "Weak UTG Fold", "preflop", "UTG", "9d 4c", "", 1.5, "You are first to act at a 6-max table.", "You have 9d 4c UTG. What is the disciplined beginner play?", ["fold", "call", "raise"], "fold", "Weak disconnected offsuit hands lose money from early position because five players still act behind you.", "Early position needs tighter starting hands.", ["preflop", "discipline", "early-position"]),
-                makeStep("preflop_basics", "preflop_003", "CO Suited Connector", "preflop", "CO", "9s 8s", "", 1.5, "UTG folds, HJ folds. Action is on Hero in the cutoff.", "You hold 9s 8s in CO. What should you do first in?", ["fold", "call", "raise"], "raise", "A suited connector in late position can open because it has playability and can win the blinds.", "Playable hands become better when fewer players remain behind.", ["preflop", "position", "suited-connector"]),
-                makeStep("preflop_basics", "preflop_004", "Big Blind Defend", "preflop", "BB", "Kc Tc", "", 5.5, "BTN raises to 2.5BB. SB folds. Action is on Hero in BB.", "You have Kc Tc in the big blind against a button open. What now?", ["fold", "call", "raise"], "call", "KTs is playable against a wide button range and you already have one blind invested.", "Defend playable suited broadways, but avoid forcing huge pots out of position.", ["preflop", "big-blind", "defend"]),
-                makeStep("preflop_basics", "preflop_005", "Marginal Hand Facing 3-Bet", "preflop", "CO", "Ad 9c", "", 10.5, "Hero opens CO to 2.5BB. BTN 3-bets to 8BB. Blinds fold.", "You opened A9o and face a button 3-bet. What is best for a beginner?", ["fold", "call", "raise"], "fold", "A9 offsuit is dominated by many 3-bet hands and plays poorly under pressure.", "Do not feel married to a loose open when pressure arrives.", ["preflop", "3-bet", "fold-discipline"])
+            pack("UTG", { en: "UTG Position", zh: "UTG 枪口位" }, { en: "Tight early-position decisions.", zh: "练习前位紧凑决策。" }, [
+                step("utg_position", "utg_001", { en: "Premium UTG Open", zh: "UTG 强牌开池" }, "preflop", "UTG", "As Ah", "", 1.5, { en: "You are first to act at a 6-max table.", zh: "6人桌翻前你第一个行动。" }, { en: "You have pocket aces UTG. What should you do?", zh: "你在 UTG 拿到 AA，应该怎么做？" }, actions.preflop, "raise", { en: "AA is the strongest starting hand. Raise for value even from early position.", zh: "AA 是最强起手牌。即使在前位，也应该为了价值加注。" }, { en: "Premium hands should build the pot before the flop.", zh: "超强起手牌翻前通常要主动建立底池。" }, ["UTG", "preflop", "value"]),
+                step("utg_position", "utg_002", { en: "Weak UTG Fold", zh: "UTG 弱牌弃牌" }, "preflop", "UTG", "9d 4c", "", 1.5, { en: "You are first to act with five players behind.", zh: "你第一个行动，身后还有五名玩家。" }, { en: "You have 9d 4c offsuit. What is the best beginner play?", zh: "你拿到 9d 4c 不同花，新手最好怎么做？" }, actions.preflop, "fold", { en: "This hand is weak, disconnected, and out of position against the table.", zh: "这手牌很弱、断张，而且你要面对全桌后续行动。" }, { en: "Early position needs stronger starting hands.", zh: "前位需要更强的起手牌。" }, ["UTG", "discipline", "fold"]),
+                step("utg_position", "utg_003", { en: "AQs From UTG", zh: "UTG AQs 决策" }, "preflop", "UTG", "Ah Qh", "", 1.5, { en: "You are first in before anyone enters the pot.", zh: "目前无人入池，轮到你行动。" }, { en: "You hold AQs UTG. What should you do?", zh: "你在 UTG 拿到 AQs，应该怎么做？" }, actions.preflop, "raise", { en: "AQs is strong enough to open and can make top pair, flushes, and strong draws.", zh: "AQs 足够强，可以开池，也能形成顶对、同花和强听牌。" }, { en: "Open strong suited broadways, but avoid weak offsuit hands.", zh: "强同花高张可以开池，弱不同花牌要少玩。" }, ["UTG", "suited", "open-raise"])
             ]),
-            pack("flop_decisions", "Flop Decisions", "Practice value, missed boards, draws, and pot control.", [
-                makeStep("flop_decisions", "flop_001", "Top Pair Value Bet", "flop", "BTN", "Ah Kh", "Kd 7c 2s", 6.5, "Hero raised BTN, BB called, and BB checks the flop.", "You have top pair top kicker on a dry board. What should you do?", ["check", "bet"], "bet", "Top pair top kicker can get called by worse kings, sevens, and pocket pairs.", "When worse hands can call, value bet.", ["flop", "top-pair", "value-bet"]),
-                makeStep("flop_decisions", "flop_002", "Missed Flop Check/Fold", "flop", "BB", "Ah Jd", "8s 6s 2c", 5.5, "BTN raised preflop, Hero called BB. Hero checks, BTN bets half pot.", "You missed the flop with no pair and no strong draw. What now?", ["fold", "call", "raise"], "fold", "With no pair, no strong draw, and poor position, continuing is usually a curiosity call.", "Fold when you have no clear way to improve or win.", ["flop", "missed-board", "fold"]),
-                makeStep("flop_decisions", "flop_003", "Flush Draw Semi-Bluff", "flop", "BTN", "As 5s", "Ks 8s 2d", 6.5, "Hero opened BTN, BB called, BB checks.", "You have the nut flush draw. What is a good beginner action?", ["check", "bet"], "bet", "Betting can win now when BB folds and can still improve to the nut flush later.", "Strong draws can bet as semi-bluffs.", ["flop", "draw", "semi-bluff"]),
-                makeStep("flop_decisions", "flop_004", "Open-Ended Straight Draw", "flop", "CO", "9d 8c", "7s 6h 2d", 7, "Hero called preflop in CO. The raiser bets small on the flop.", "You have an open-ended straight draw facing a small bet. What now?", ["fold", "call", "raise"], "call", "A 5 or T can make a straight, and the small bet gives a reasonable price.", "Draws care about price. Small bets are easier to call than large bets.", ["flop", "straight-draw", "pot-odds"]),
-                makeStep("flop_decisions", "flop_005", "Middle Pair Pot Control", "flop", "BTN", "Qh 8h", "Ks 8d 3c", 6.5, "Hero opened BTN, BB called, BB checks.", "You have middle pair on a dry K-high board. What is the calmer play?", ["check", "bet"], "check", "Middle pair has some showdown value but does not love building a big pot.", "Medium hands often prefer pot control.", ["flop", "middle-pair", "pot-control"])
+            pack("HJ", { en: "HJ Position", zh: "HJ 劫位" }, { en: "Middle-position opening and discipline.", zh: "练习中前位开池和纪律。" }, [
+                step("hj_position", "hj_001", { en: "Pocket Tens in HJ", zh: "HJ 口袋T" }, "preflop", "HJ", "Ts Td", "", 1.5, { en: "UTG folds. Action is on you in HJ.", zh: "UTG 弃牌，轮到 HJ 的你。" }, { en: "You have TT in HJ. What should you do?", zh: "你在 HJ 拿到 TT，应该怎么做？" }, actions.preflop, "raise", { en: "TT is a strong pair and wants value before overcards arrive.", zh: "TT 是强口袋对子，应该在高牌出现前主动拿价值。" }, { en: "Good pairs usually open from HJ.", zh: "不错的对子在 HJ 通常可以开池。" }, ["HJ", "pair", "open-raise"]),
+                step("hj_position", "hj_002", { en: "KJo Discipline", zh: "HJ KJo 纪律" }, "preflop", "HJ", "Kc Jd", "", 1.5, { en: "UTG folds. CO, BTN, and blinds remain behind.", zh: "UTG 弃牌，CO、BTN 和盲注位还在身后。" }, { en: "You hold KJo in HJ. What is the safer beginner choice?", zh: "你在 HJ 拿到 KJo，新手更稳的选择是什么？" }, actions.preflop, "fold", { en: "KJo can be dominated by better kings and better jacks when called or 3-bet.", zh: "KJo 容易被更好的 K 或 J 压制，被跟注或3bet时不好打。" }, { en: "Offsuit broadways are not all automatic opens from middle position.", zh: "不同花高张并不是中前位自动开池。" }, ["HJ", "dominated", "fold"]),
+                step("hj_position", "hj_003", { en: "Suited Ace Open", zh: "HJ 同花A开池" }, "preflop", "HJ", "Ad 5d", "", 1.5, { en: "UTG folds and action is on you.", zh: "UTG 弃牌，轮到你行动。" }, { en: "You have A5 suited in HJ. What should you do?", zh: "你在 HJ 拿到 A5 同花，应该怎么做？" }, actions.preflop, "raise", { en: "A5 suited has ace blocker value and can make nut flushes or wheel straights.", zh: "A5同花有A阻断，也能形成最大同花或小顺子。" }, { en: "Small suited aces are playable when opened with a plan.", zh: "小同花A可以玩，但要带着计划开池。" }, ["HJ", "suited-ace", "open-raise"])
             ]),
-            pack("turn_river_decisions", "Turn / River Decisions", "Practice later street discipline and value.", [
-                makeStep("turn_river_decisions", "turnriver_001", "Value Bet Turn", "turn", "BTN", "Ad Qh", "Qs 7d 3c 2s", 14, "Hero bet flop with top pair and BB called. BB checks turn.", "The turn is a blank and you still have top pair ace kicker. What now?", ["check", "bet"], "bet", "Worse queens and draws can still call, so a second value bet is reasonable.", "Keep betting when worse hands can continue.", ["turn", "value-bet", "top-pair"]),
-                makeStep("turn_river_decisions", "turnriver_002", "Scary Turn Control", "turn", "CO", "Kc Qc", "Kh Jh 4s Ah", 18, "Hero bet flop and got called. The turn is an ace and opponent checks.", "The ace is scary for one pair. What is a prudent beginner option?", ["check", "bet"], "check", "The ace improves many calling hands and your one pair no longer wants a large pot.", "Scary cards are a reason to slow down with medium strength.", ["turn", "pot-control", "scare-card"]),
-                makeStep("turn_river_decisions", "turnriver_003", "River Bluff Catcher", "river", "BB", "Qd Jd", "Qs 8c 4h 2s 2d", 24, "BTN bet flop, checked turn, and bets small on river.", "You have top pair against a small river bet after turn checked through. What now?", ["fold", "call", "raise"], "call", "Top pair can bluff-catch versus a small bet after the opponent showed weakness on the turn.", "Call more comfortably when the price is small and your hand beats bluffs.", ["river", "bluff-catcher", "call"]),
-                makeStep("turn_river_decisions", "turnriver_004", "Facing Large River Bet", "river", "BB", "Kc Qd", "Kh 9d 4s 2c Ac", 30, "Hero called flop and turn. River is an ace. Opponent bets pot.", "You have one pair facing a pot-sized river bet on a scary ace. What now?", ["fold", "call", "raise"], "fold", "A large river bet on a scary card is often strong. One pair needs a clear read to call.", "Big river calls need strong reasons, not curiosity.", ["river", "fold-discipline", "one-pair"]),
-                makeStep("turn_river_decisions", "turnriver_005", "Missed Draw Give Up", "river", "BTN", "As 5s", "Ks 8s 2d 4c 9h", 20, "Hero bet flop with nut flush draw, checked turn, and BB checks river.", "Your flush draw missed on the river. What is best for a beginner?", ["check", "bet"], "check", "When a draw misses and the opponent can still have pairs, giving up is often best for beginners.", "You do not need to bluff every missed draw.", ["river", "missed-draw", "give-up"])
+            pack("CO", { en: "CO Position", zh: "CO 关煞位" }, { en: "Late-position steals and playable hands.", zh: "练习后位偷盲和可玩手牌。" }, [
+                step("co_position", "co_001", { en: "Suited Connector Open", zh: "CO 同花连张开池" }, "preflop", "CO", "9s 8s", "", 1.5, { en: "UTG and HJ fold. Action is on CO.", zh: "UTG 和 HJ 弃牌，轮到 CO。" }, { en: "You have 98 suited in CO. What should you do?", zh: "你在 CO 拿到 98 同花，应该怎么做？" }, actions.preflop, "raise", { en: "In CO, 98s has position potential and can win blinds or make strong draws.", zh: "在 CO，98同花有位置潜力，可以偷盲，也能形成强听牌。" }, { en: "Late position lets more speculative hands become playable.", zh: "后位能让更多投机牌变得可玩。" }, ["CO", "suited-connector", "open-raise"]),
+                step("co_position", "co_002", { en: "AQo Value Open", zh: "CO AQo 价值开池" }, "preflop", "CO", "As Qd", "", 1.5, { en: "Two players fold. BTN and blinds remain.", zh: "前面两人弃牌，BTN 和盲注位还在。" }, { en: "You hold AQ offsuit in CO. What now?", zh: "你在 CO 拿到 AQ 不同花，应该怎么做？" }, actions.preflop, "raise", { en: "AQo is ahead of many continuing hands and benefits from initiative.", zh: "AQo 领先很多会继续的牌，主动权也很重要。" }, { en: "Strong broadways in CO usually want to raise first in.", zh: "CO 的强高张通常要率先加注入池。" }, ["CO", "broadway", "value"]),
+                step("co_position", "co_003", { en: "Facing a BTN 3-Bet", zh: "CO 面对按钮3bet" }, "preflop", "CO", "Ad 9c", "", 10.5, { en: "Hero opens CO to 2.5BB. BTN 3-bets to 8BB. Blinds fold.", zh: "Hero 在 CO 开池到2.5BB，BTN 3bet 到8BB，盲注弃牌。" }, { en: "You opened A9o and face a 3-bet. What should a beginner do?", zh: "你用 A9o 开池后面对3bet，新手应该怎么做？" }, actions.preflop, "fold", { en: "A9 offsuit is often dominated and difficult to play against a 3-bet.", zh: "A9不同花经常被压制，面对3bet很难打。" }, { en: "You can open a hand and still fold when the price changes.", zh: "你可以先开池，但遇到压力后仍然可以弃牌。" }, ["CO", "3-bet", "fold"])
+            ]),
+            pack("BTN", { en: "BTN Position", zh: "BTN 按钮位" }, { en: "Best-position pressure and value.", zh: "练习最佳位置的施压和价值。" }, [
+                step("btn_position", "btn_001", { en: "AKo Button Open", zh: "BTN AKo 开池" }, "preflop", "BTN", "As Kh", "", 1.5, { en: "Everyone folds to you on the button.", zh: "前面所有人弃牌，轮到按钮位的你。" }, { en: "You have AKo on BTN. What should you do?", zh: "你在 BTN 拿到 AKo，应该怎么做？" }, actions.preflop, "raise", { en: "AKo is premium and BTN has position on both blinds.", zh: "AKo 是强牌，BTN 对两个盲注位都有位置优势。" }, { en: "Strong hand plus best position means be active.", zh: "强牌加最佳位置，通常要主动进攻。" }, ["BTN", "premium", "open-raise"]),
+                step("btn_position", "btn_002", { en: "Button Trash Discipline", zh: "BTN 垃圾牌纪律" }, "preflop", "BTN", "8d 3c", "", 1.5, { en: "Everyone folds to BTN.", zh: "前面都弃牌到 BTN。" }, { en: "You have 83 offsuit. Does position make it playable?", zh: "你拿到83不同花，位置好就能玩吗？" }, actions.preflop, "fold", { en: "Button helps, but it does not turn very weak disconnected cards into good opens.", zh: "按钮位有帮助，但不能把很弱的断张牌变成好开池。" }, { en: "Position is powerful, not magic.", zh: "位置很强，但不是魔法。" }, ["BTN", "fold", "discipline"]),
+                step("btn_position", "btn_003", { en: "Flop Top Pair Value", zh: "BTN 翻牌顶对价值" }, "flop", "BTN", "Kc Qc", "Qs 8d 2h", 6.5, { en: "Hero opened BTN, BB called, and BB checks flop.", zh: "Hero 在 BTN 开池，BB 跟注，翻牌 BB 过牌。" }, { en: "You have top pair with good kicker. What should you do?", zh: "你有顶对好踢脚，应该怎么做？" }, actions.postflop, "bet", { en: "Worse queens and pocket pairs can call, so betting gets value.", zh: "更差的Q和口袋对子可能跟注，因此下注能拿价值。" }, { en: "When worse hands call, bet for value.", zh: "当更差牌会跟注时，下注拿价值。" }, ["BTN", "flop", "value-bet"])
+            ]),
+            pack("SB", { en: "SB Position", zh: "SB 小盲位" }, { en: "Forced blind spots and playing out of position.", zh: "练习小盲强制下注和无位置。" }, [
+                step("sb_position", "sb_001", { en: "SB Completing Trap", zh: "SB 补盲陷阱" }, "preflop", "SB", "Jd 4c", "", 1, { en: "Everyone folds to SB. BB is still behind.", zh: "前面都弃牌到小盲，BB 还在后面。" }, { en: "You have J4 offsuit in SB. What is best?", zh: "你在 SB 拿到 J4 不同花，最好怎么做？" }, actions.preflop, "fold", { en: "Completing weak hands from SB creates hard out-of-position spots.", zh: "小盲用弱牌补盲，会制造很多无位置难题。" }, { en: "Do not complete just because it looks cheap.", zh: "不要因为看起来便宜就随便补盲。" }, ["SB", "fold", "out-of-position"]),
+                step("sb_position", "sb_002", { en: "SB Steal With A5s", zh: "SB A5s 偷盲" }, "preflop", "SB", "As 5s", "", 1.5, { en: "Everyone folds to SB. BB is the only player left.", zh: "前面都弃牌到小盲，只剩 BB。" }, { en: "You hold A5 suited in SB. What should you do?", zh: "你在 SB 拿到 A5 同花，应该怎么做？" }, actions.preflop, "raise", { en: "A5 suited is strong heads-up against BB and benefits from fold equity.", zh: "A5同花单挑BB不错，也能利用弃牌率。" }, { en: "When entering from SB, raise more often than limp.", zh: "小盲入池时，通常加注比跛入更清晰。" }, ["SB", "steal", "suited-ace"]),
+                step("sb_position", "sb_003", { en: "SB Top Pair Caution", zh: "SB 顶对谨慎" }, "flop", "SB", "Qh Jd", "Js 9s 4c", 7, { en: "Hero raised SB, BB called. Hero acts first on the flop.", zh: "Hero 在小盲加注，BB 跟注。翻牌 Hero 先行动。" }, { en: "You have top pair but are out of position on a draw-heavy board. What now?", zh: "你有顶对，但在多听牌牌面且无位置，应该怎么做？" }, actions.postflop, "bet", { en: "A smaller bet can get value and protect, but avoid building a huge pot blindly.", zh: "小额下注可以拿价值和保护，但不要盲目打大底池。" }, { en: "Out of position, keep your plan simple and controlled.", zh: "无位置时，计划要简单并控制风险。" }, ["SB", "top-pair", "protection"])
+            ]),
+            pack("BB", { en: "BB Position", zh: "BB 大盲位" }, { en: "Defending and postflop discipline from the big blind.", zh: "练习大盲防守和翻后纪律。" }, [
+                step("bb_position", "bb_001", { en: "BB Suited Defend", zh: "BB 同花牌防守" }, "preflop", "BB", "Kc Tc", "", 5.5, { en: "BTN raises to 2.5BB. SB folds. Action is on BB.", zh: "BTN 加注到2.5BB，SB 弃牌，轮到 BB。" }, { en: "You have KTs in BB versus a button open. What should you do?", zh: "你在 BB 用 KTs 面对按钮开池，应该怎么做？" }, actions.preflop, "call", { en: "KTs plays well enough against a wide button range and you already posted the blind.", zh: "KTs 对按钮宽范围有足够可玩性，而且你已投入大盲。" }, { en: "Defend playable suited hands, but stay disciplined postflop.", zh: "可玩的同花牌可以防守，但翻后要守纪律。" }, ["BB", "defend", "call"]),
+                step("bb_position", "bb_002", { en: "BB Missed Flop", zh: "BB 翻牌未中" }, "flop", "BB", "Ah Jd", "8s 6s 2c", 5.5, { en: "BTN raised, BB called. Hero checks, BTN bets half pot.", zh: "BTN 加注，BB 跟注。Hero 过牌，BTN 下半池。" }, { en: "You missed with no pair and no strong draw. What should you do?", zh: "你没中牌，也没有强听牌，应该怎么做？" }, actions.river, "fold", { en: "No pair, no draw, and bad position make this a clear fold.", zh: "没对子、没听牌、位置差，这通常是清晰弃牌。" }, { en: "Do not defend preflop and then chase every flop.", zh: "不要翻前防守后，每个翻牌都硬追。" }, ["BB", "flop", "fold"]),
+                step("bb_position", "bb_003", { en: "BB River Bluff Catcher", zh: "BB 河牌抓诈唬" }, "river", "BB", "Qd Jd", "Qs 8c 4h 2s 2d", 24, { en: "BTN bet flop, checked turn, then bets small on river.", zh: "BTN 翻牌下注，转牌过牌，河牌小额下注。" }, { en: "You have top pair facing a small river bet. What now?", zh: "你有顶对，面对河牌小额下注，应该怎么做？" }, actions.river, "call", { en: "The small sizing and checked turn make calling reasonable with top pair.", zh: "下注尺度小，且对手转牌示弱，顶对跟注是合理的。" }, { en: "Bluff-catching is better when the price is small.", zh: "价格小的时候，抓诈唬更舒服。" }, ["BB", "river", "bluff-catcher"])
             ])
         ];
     }
 
     async loadScenarioFromBackend() {
-        try {
-            const response = await fetch(`${API_BASE_URL}/api/practice/scenario?difficulty=beginner&street=random&language=${this.language}`);
-            if (!response.ok) return;
-            const data = await response.json();
-            const scenario = this.scenarioFromApi(data);
-            this.practiceScenarios = [scenario, ...this.practiceScenarios.filter((item) => item.id !== scenario.id)];
-            this.practiceState.scenarioId = scenario.id;
-            this.renderPracticeScenarioOptions();
-            this.renderPractice();
-        } catch (error) {
-            this.renderPractice();
-        }
+        this.renderPractice();
     }
 
     scenarioFromApi(data) {
@@ -1480,10 +1494,20 @@ class StackSenseiApp {
             return;
         }
         this.practiceActions.innerHTML = step.availableActions.map((action) => {
-            const selected = this.practiceState.selectedAction === action ? "action-selected" : "";
-            const tone = action === step.recommendedAction ? "primary" : action === "fold" ? "danger" : "";
-            return `<button class="action-button ${tone} ${selected}" type="button" data-action="${action}" ${this.practiceState.feedbackVisible ? "disabled" : ""}>${COPY[this.language].actions[action] || action}</button>`;
+            const id = this.actionId(action);
+            const selected = this.practiceState.selectedAction === id ? "action-selected" : "";
+            const tone = id === step.recommendedAction ? "primary" : id === "fold" ? "danger" : "";
+            return `<button class="action-button ${tone} ${selected}" type="button" data-action="${this.escapeAttr(id)}" ${this.practiceState.feedbackVisible ? "disabled" : ""}>${this.escapeHtml(this.actionText(action))}</button>`;
         }).join("");
+    }
+
+    actionId(action) {
+        return typeof action === "object" ? action.id : action;
+    }
+
+    actionText(action) {
+        if (typeof action === "object") return this.text(action.label) || COPY[this.language].actions[action.id] || action.id;
+        return COPY[this.language].actions[action] || action;
     }
 
     async handlePracticeAction(action, button) {
@@ -1494,7 +1518,7 @@ class StackSenseiApp {
         this.practiceState.feedbackVisible = true;
         await this.submitPracticeAction(action);
         this.renderPractice();
-        this.animateSeatAction(this.currentStep().heroPosition, `${this.t("yourChoice")}: ${COPY[this.language].actions[action] || action}`);
+        this.animateSeatAction(this.currentStep().heroPosition, `${this.t("yourChoice")}: ${this.actionText(action)}`);
     }
 
     async submitPracticeAction(action) {
@@ -1541,7 +1565,7 @@ class StackSenseiApp {
         const action = this.practiceState.selectedAction;
         const isRecommended = action === step.recommendedAction;
         const feedbackText = step.feedbackByAction[action] ? this.text(step.feedbackByAction[action]) : (isRecommended ? this.text(step.coachTip) : this.text(step.coachTip));
-        this.practiceFeedback.innerHTML = `<div class="feedback-card ${isRecommended ? "good" : "caution"}"><strong>${this.t("yourChoice")}:</strong> ${COPY[this.language].actions[action] || action}<br>${feedbackText}</div><div class="feedback-card"><strong>${this.t("coachSuggestion")}:</strong> ${COPY[this.language].actions[step.recommendedAction] || step.recommendedAction}<br><strong>${this.t("beginnerTip")}:</strong> ${this.text(step.coachTip)}</div><p>${this.text(step.nextNarration)}</p>`;
+        this.practiceFeedback.innerHTML = `<div class="feedback-card ${isRecommended ? "good" : "caution"}"><strong>${this.t("yourChoice")}:</strong> ${this.escapeHtml(COPY[this.language].actions[action] || action)}<br>${this.escapeHtml(feedbackText)}</div><div class="feedback-card"><strong>${this.t("coachSuggestion")}:</strong> ${this.escapeHtml(COPY[this.language].actions[step.recommendedAction] || step.recommendedAction)}<br><strong>${this.t("beginnerTip")}:</strong> ${this.escapeHtml(this.text(step.coachTip))}</div><p>${this.escapeHtml(this.text(step.nextNarration))}</p>`;
     }
 
     renderStreetProgress(activeStreet) {
