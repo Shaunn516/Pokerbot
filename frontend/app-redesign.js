@@ -91,6 +91,12 @@ const COPY = {
         thinking: "Thinking...",
         handLoaded: "Hand loaded",
         empty: "Please enter a question first.",
+        incompleteHandTitle: "Please complete the hand setup:",
+        missingHeroCards: "Choose both hero cards.",
+        missingPosition: "Choose your position.",
+        missingPot: "Enter the pot size.",
+        missingActionHistory: "Describe the action history.",
+        incompleteBoard: "Board cards must be empty, flop 3 cards, turn 4 cards, or river 5 cards.",
         backendError: "The backend may be waking up. Please try again in a moment.",
         genericError: "Sorry, something went wrong.",
         duplicateWarning: "Duplicate card selected. Please choose unique cards.",
@@ -146,8 +152,13 @@ const COPY = {
         downloadPng: "Download PNG",
         copyImage: "Copy Image",
         copied: "Image copied.",
-        copyFallback: "Copy is not supported here. Download works.",
+        copyFallback: "Copy is not supported in this browser. Please download the image instead.",
         shareReady: "Share card ready.",
+        nextHand: "Next Hand",
+        practiceComplete: "Practice Complete",
+        restartPractice: "Restart Practice",
+        backToLearn: "Back to Learn",
+        analyzeAHand: "Analyze a Hand",
         reviewedBy: "Reviewed by StackSensei",
         handReview: "Hand Review",
         recommendedAction: "Recommended action",
@@ -698,10 +709,12 @@ class StackSenseiApp {
         });
         this.analyzeForm.addEventListener("submit", (event) => {
             event.preventDefault();
+            if (!this.validateAnalyzeInputs(true)) return;
             this.sendChat("analyze");
         });
         this.updateButton.addEventListener("click", () => {
             this.syncCardsFromSelectors();
+            if (!this.validateAnalyzeInputs(true)) return;
             this.statePill.textContent = this.t("handLoaded");
             this.setSection("analyze");
         });
@@ -1200,6 +1213,7 @@ class StackSenseiApp {
                     <select class="card-rank" data-slot="${slot.id}"></select>
                     <select class="card-suit" data-slot="${slot.id}"></select>
                 </div>
+                <span class="card-selected-preview" data-card-preview="${slot.id}">--</span>
             `;
             (slot.group === "hole" ? this.holeSelectorRoot : this.boardSelectorRoot).appendChild(wrapper);
         });
@@ -1235,7 +1249,15 @@ class StackSenseiApp {
         const boardCards = CARD_SLOTS.filter((slot) => slot.group === "board").map((slot) => this.cardFromSlot(slot.id)).filter(Boolean);
         this.handCards.value = holeCards.join(" ");
         this.communityCards.value = boardCards.join(" ");
-        document.querySelectorAll(".card-selector").forEach((el) => el.classList.toggle("has-card", Boolean(this.cardFromSlot(el.dataset.slot))));
+        document.querySelectorAll(".card-selector").forEach((el) => {
+            const card = this.cardFromSlot(el.dataset.slot);
+            el.classList.toggle("has-card", Boolean(card));
+            const preview = el.querySelector("[data-card-preview]");
+            if (preview) {
+                preview.textContent = card ? this.cardText(card) : "--";
+                preview.classList.toggle("red", Boolean(card && this.isRedCard(card)));
+            }
+        });
         this.validateDuplicateCards();
         this.updateAnalyzeTable(true);
     }
@@ -1246,6 +1268,21 @@ class StackSenseiApp {
         this.cardWarning.textContent = duplicate ? this.t("duplicateWarning") : "";
         this.updateButton.disabled = duplicate;
         return !duplicate;
+    }
+
+    validateAnalyzeInputs(showAlert = false) {
+        this.syncCardsFromSelectors();
+        const missing = [];
+        const heroCards = this.handCards.value.split(/\s+/).filter(Boolean);
+        const boardCards = this.communityCards.value.split(/\s+/).filter(Boolean);
+        if (heroCards.length < 2) missing.push(this.t("missingHeroCards"));
+        if (!this.position.value || this.position.value === "unknown") missing.push(this.t("missingPosition"));
+        if (!(Number.parseFloat(this.pot.value) > 0)) missing.push(this.t("missingPot"));
+        if (!this.actionHistory.value.trim()) missing.push(this.t("missingActionHistory"));
+        if (![0, 3, 4, 5].includes(boardCards.length)) missing.push(this.t("incompleteBoard"));
+        if (!this.validateDuplicateCards()) missing.push(this.t("duplicateWarning"));
+        if (missing.length && showAlert) window.alert(`${this.t("incompleteHandTitle")}\n\n${missing.map((line) => `- ${line}`).join("\n")}`);
+        return missing.length === 0;
     }
 
     renderPositionOptions() {
@@ -1264,51 +1301,59 @@ class StackSenseiApp {
     }
 
     localPracticeScenarios() {
+        const makeStep = (packId, handId, title, street, heroPosition, heroCards, boardCards, pot, actionHistory, prompt, availableActions, recommendedAction, coachExplanation, beginnerTip, tags = []) => ({
+            handId,
+            packId,
+            title: { en: title, zh: title },
+            street,
+            heroPosition,
+            heroCards: this.splitCards(heroCards),
+            boardCards: this.splitCards(boardCards),
+            pot,
+            stack: 100,
+            players: street === "preflop" ? 6 : 2,
+            actionHistory,
+            summaryText: { en: prompt, zh: prompt },
+            availableActions: availableActions.map((action) => typeof action === "string" ? { id: action, label: COPY.en.actions[action] || action } : action),
+            recommendedAction,
+            coachTip: { en: beginnerTip, zh: beginnerTip },
+            coachExplanation: { en: coachExplanation, zh: coachExplanation },
+            feedbackByAction: {},
+            nextNarration: { en: coachExplanation, zh: coachExplanation },
+            tags
+        });
+        const pack = (id, title, summary, steps) => ({
+            id,
+            title: { en: title, zh: title },
+            difficulty: { en: "Beginner", zh: "新手" },
+            finalSummary: {
+                en: { good: title + " complete. You played " + steps.length + " hands with clear beginner logic.", tip: "Restart this pack or move to Analyze when you want a deeper review." },
+                zh: { good: title + " complete. You played " + steps.length + " hands with clear beginner logic.", tip: "Restart this pack or move to Analyze when you want a deeper review." }
+            },
+            steps
+        });
         return [
-            {
-                id: "beginner-top-pair",
-                title: { en: "Top pair on a dry flop", zh: "干燥牌面的顶对" },
-                difficulty: { en: "Beginner", zh: "新手" },
-                finalSummary: { en: { good: "You practiced betting for value with a strong pair.", tip: "Ask which worse hands can call before betting." }, zh: { good: "你练习了用强顶对价值下注。", tip: "下注前先问：哪些更差的牌会跟？" } },
-                steps: [
-                    {
-                        street: "flop",
-                        heroPosition: "BTN",
-                        heroCards: ["Ah", "Kh"],
-                        boardCards: ["Kd", "7c", "2s"],
-                        pot: 6.5,
-                        stack: 100,
-                        actionHistory: "Hero raises BTN, BB calls. BB checks flop.",
-                        summaryText: { en: "You have top pair, top kicker. BB checks on a dry board.", zh: "你有顶对顶踢脚，大盲在干燥牌面过牌。" },
-                        availableActions: ["check", "bet"],
-                        recommendedAction: "bet",
-                        coachTip: { en: "Bet small for value. Worse kings and pairs can continue.", zh: "小额价值下注。更差的K和对子可能会跟。" },
-                        feedbackByAction: {
-                            bet: { en: "Good. Your hand can get called by worse hands.", zh: "很好。你的牌能被更差牌跟注。" },
-                            check: { en: "Checking is safe, but misses value from worse hands.", zh: "过牌安全，但会错过更差牌的价值。" }
-                        },
-                        nextNarration: { en: "Now imagine the turn brings a draw card.", zh: "现在假设转牌带来听牌可能。" }
-                    },
-                    {
-                        street: "turn",
-                        heroPosition: "BTN",
-                        heroCards: ["Ah", "Kh"],
-                        boardCards: ["Kd", "7c", "2s", "9c"],
-                        pot: 10.5,
-                        stack: 96,
-                        actionHistory: "Hero bets flop, BB calls. Turn 9c, BB checks.",
-                        summaryText: { en: "The turn adds club draws. BB checks again.", zh: "转牌增加了同花听牌，大盲再次过牌。" },
-                        availableActions: ["check", "bet"],
-                        recommendedAction: "bet",
-                        coachTip: { en: "Bet again for value and protection.", zh: "再次下注，既拿价值也保护牌。" },
-                        feedbackByAction: {
-                            bet: { en: "Good. Draws and worse pairs should pay.", zh: "很好。听牌和更差对子应该付费。" },
-                            check: { en: "Checking gives free cards to draws.", zh: "过牌会让听牌免费看河牌。" }
-                        },
-                        nextNarration: { en: "The hand is complete.", zh: "这一手练习完成。" }
-                    }
-                ]
-            }
+            pack("preflop_basics", "Preflop Basics", "Open, fold, defend, and handle pressure before the flop.", [
+                makeStep("preflop_basics", "preflop_001", "BTN AKo Open Raise", "preflop", "BTN", "As Kh", "", 1.5, "UTG folds, HJ folds, CO folds. Action is on Hero.", "You are on the button with AKo. Everyone folds to you. What should you do?", [{ id: "fold", label: "Fold" }, { id: "call", label: "Call" }, { id: "raise", label: "Raise to 2.5BB" }], "raise", "AKo is a premium hand and BTN is the best position. Raising builds value and pressures the blinds.", "Strong hands in late position usually want to raise first in.", ["preflop", "position", "open-raise"]),
+                makeStep("preflop_basics", "preflop_002", "Weak UTG Fold", "preflop", "UTG", "9d 4c", "", 1.5, "You are first to act at a 6-max table.", "You have 9d 4c UTG. What is the disciplined beginner play?", ["fold", "call", "raise"], "fold", "Weak disconnected offsuit hands lose money from early position because five players still act behind you.", "Early position needs tighter starting hands.", ["preflop", "discipline", "early-position"]),
+                makeStep("preflop_basics", "preflop_003", "CO Suited Connector", "preflop", "CO", "9s 8s", "", 1.5, "UTG folds, HJ folds. Action is on Hero in the cutoff.", "You hold 9s 8s in CO. What should you do first in?", ["fold", "call", "raise"], "raise", "A suited connector in late position can open because it has playability and can win the blinds.", "Playable hands become better when fewer players remain behind.", ["preflop", "position", "suited-connector"]),
+                makeStep("preflop_basics", "preflop_004", "Big Blind Defend", "preflop", "BB", "Kc Tc", "", 5.5, "BTN raises to 2.5BB. SB folds. Action is on Hero in BB.", "You have Kc Tc in the big blind against a button open. What now?", ["fold", "call", "raise"], "call", "KTs is playable against a wide button range and you already have one blind invested.", "Defend playable suited broadways, but avoid forcing huge pots out of position.", ["preflop", "big-blind", "defend"]),
+                makeStep("preflop_basics", "preflop_005", "Marginal Hand Facing 3-Bet", "preflop", "CO", "Ad 9c", "", 10.5, "Hero opens CO to 2.5BB. BTN 3-bets to 8BB. Blinds fold.", "You opened A9o and face a button 3-bet. What is best for a beginner?", ["fold", "call", "raise"], "fold", "A9 offsuit is dominated by many 3-bet hands and plays poorly under pressure.", "Do not feel married to a loose open when pressure arrives.", ["preflop", "3-bet", "fold-discipline"])
+            ]),
+            pack("flop_decisions", "Flop Decisions", "Practice value, missed boards, draws, and pot control.", [
+                makeStep("flop_decisions", "flop_001", "Top Pair Value Bet", "flop", "BTN", "Ah Kh", "Kd 7c 2s", 6.5, "Hero raised BTN, BB called, and BB checks the flop.", "You have top pair top kicker on a dry board. What should you do?", ["check", "bet"], "bet", "Top pair top kicker can get called by worse kings, sevens, and pocket pairs.", "When worse hands can call, value bet.", ["flop", "top-pair", "value-bet"]),
+                makeStep("flop_decisions", "flop_002", "Missed Flop Check/Fold", "flop", "BB", "Ah Jd", "8s 6s 2c", 5.5, "BTN raised preflop, Hero called BB. Hero checks, BTN bets half pot.", "You missed the flop with no pair and no strong draw. What now?", ["fold", "call", "raise"], "fold", "With no pair, no strong draw, and poor position, continuing is usually a curiosity call.", "Fold when you have no clear way to improve or win.", ["flop", "missed-board", "fold"]),
+                makeStep("flop_decisions", "flop_003", "Flush Draw Semi-Bluff", "flop", "BTN", "As 5s", "Ks 8s 2d", 6.5, "Hero opened BTN, BB called, BB checks.", "You have the nut flush draw. What is a good beginner action?", ["check", "bet"], "bet", "Betting can win now when BB folds and can still improve to the nut flush later.", "Strong draws can bet as semi-bluffs.", ["flop", "draw", "semi-bluff"]),
+                makeStep("flop_decisions", "flop_004", "Open-Ended Straight Draw", "flop", "CO", "9d 8c", "7s 6h 2d", 7, "Hero called preflop in CO. The raiser bets small on the flop.", "You have an open-ended straight draw facing a small bet. What now?", ["fold", "call", "raise"], "call", "A 5 or T can make a straight, and the small bet gives a reasonable price.", "Draws care about price. Small bets are easier to call than large bets.", ["flop", "straight-draw", "pot-odds"]),
+                makeStep("flop_decisions", "flop_005", "Middle Pair Pot Control", "flop", "BTN", "Qh 8h", "Ks 8d 3c", 6.5, "Hero opened BTN, BB called, BB checks.", "You have middle pair on a dry K-high board. What is the calmer play?", ["check", "bet"], "check", "Middle pair has some showdown value but does not love building a big pot.", "Medium hands often prefer pot control.", ["flop", "middle-pair", "pot-control"])
+            ]),
+            pack("turn_river_decisions", "Turn / River Decisions", "Practice later street discipline and value.", [
+                makeStep("turn_river_decisions", "turnriver_001", "Value Bet Turn", "turn", "BTN", "Ad Qh", "Qs 7d 3c 2s", 14, "Hero bet flop with top pair and BB called. BB checks turn.", "The turn is a blank and you still have top pair ace kicker. What now?", ["check", "bet"], "bet", "Worse queens and draws can still call, so a second value bet is reasonable.", "Keep betting when worse hands can continue.", ["turn", "value-bet", "top-pair"]),
+                makeStep("turn_river_decisions", "turnriver_002", "Scary Turn Control", "turn", "CO", "Kc Qc", "Kh Jh 4s Ah", 18, "Hero bet flop and got called. The turn is an ace and opponent checks.", "The ace is scary for one pair. What is a prudent beginner option?", ["check", "bet"], "check", "The ace improves many calling hands and your one pair no longer wants a large pot.", "Scary cards are a reason to slow down with medium strength.", ["turn", "pot-control", "scare-card"]),
+                makeStep("turn_river_decisions", "turnriver_003", "River Bluff Catcher", "river", "BB", "Qd Jd", "Qs 8c 4h 2s 2d", 24, "BTN bet flop, checked turn, and bets small on river.", "You have top pair against a small river bet after turn checked through. What now?", ["fold", "call", "raise"], "call", "Top pair can bluff-catch versus a small bet after the opponent showed weakness on the turn.", "Call more comfortably when the price is small and your hand beats bluffs.", ["river", "bluff-catcher", "call"]),
+                makeStep("turn_river_decisions", "turnriver_004", "Facing Large River Bet", "river", "BB", "Kc Qd", "Kh 9d 4s 2c Ac", 30, "Hero called flop and turn. River is an ace. Opponent bets pot.", "You have one pair facing a pot-sized river bet on a scary ace. What now?", ["fold", "call", "raise"], "fold", "A large river bet on a scary card is often strong. One pair needs a clear read to call.", "Big river calls need strong reasons, not curiosity.", ["river", "fold-discipline", "one-pair"]),
+                makeStep("turn_river_decisions", "turnriver_005", "Missed Draw Give Up", "river", "BTN", "As 5s", "Ks 8s 2d 4c 9h", 20, "Hero bet flop with nut flush draw, checked turn, and BB checks river.", "Your flush draw missed on the river. What is best for a beginner?", ["check", "bet"], "check", "When a draw misses and the opponent can still have pairs, giving up is often best for beginners.", "You do not need to bluff every missed draw.", ["river", "missed-draw", "give-up"])
+            ])
         ];
     }
 

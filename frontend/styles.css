@@ -1340,11 +1340,13 @@ input:disabled {
 }
 
 .board-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(112px, 1fr));
+    overflow-x: auto;
+    padding-bottom: 4px;
 }
 
 .card-selector {
-    min-width: 0;
+    min-width: 112px;
     display: grid;
     gap: 5px;
 }
@@ -1359,6 +1361,30 @@ input:disabled {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 6px;
+}
+
+.card-picker-row select {
+    min-width: 0;
+    padding: 0 26px 0 10px;
+    text-align: center;
+    text-align-last: center;
+}
+
+.card-selected-preview {
+    min-height: 22px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(243, 200, 97, 0.22);
+    border-radius: 999px;
+    background: rgba(243, 200, 97, 0.07);
+    color: #f7ead2;
+    font-weight: 900;
+    font-size: 12px;
+    letter-spacing: 0;
+}
+
+.card-selected-preview.red {
+    color: #ff8a7f;
 }
 
 .card-selector:hover select,
@@ -1542,7 +1568,7 @@ input:disabled {
     }
 
     .board-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(104px, 1fr));
     }
 
     .learn-card {
